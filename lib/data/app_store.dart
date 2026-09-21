@@ -48,7 +48,7 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void completeTask(OperatorTask task) {
+  void addTask(String title, {String? tag}) {\n    final clean = title.trim(); if (clean.isEmpty) return;\n    tasks.insert(0, OperatorTask(id: DateTime.now().microsecondsSinceEpoch.toString(), title: clean, equipmentTag: tag));\n    addLog('Action created: $clean', tag: tag);\n  }\n\n  void setTaskState(OperatorTask task, ActionState state) {\n    task.state = state;\n    addLog('Action ${task.title} → ${state.name}', tag: task.equipmentTag);\n  }\n\n  void completeTask(OperatorTask task) {
     task.state = ActionState.completed;
     notifyListeners();
   }
