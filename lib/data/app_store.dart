@@ -3,6 +3,7 @@ import '../models/models.dart';
 import '../models/shift_handover.dart';
 import '../models/equipment_knowledge.dart';
 import '../models/process_circuit.dart';
+import '../models/operator_note.dart';
 import 'local_repository.dart';
 
 class AppStore extends ChangeNotifier {
@@ -12,6 +13,7 @@ class AppStore extends ChangeNotifier {
   final List<ShiftHandover> handovers=[];
   final Map<String,EquipmentKnowledge> knowledge={};
   final List<ProcessCircuit> circuits=[];
+  final List<OperatorNote> notes=[];
 
   Future<void> hydrate() async {
     final s=await _repository.load();
@@ -24,10 +26,11 @@ class AppStore extends ChangeNotifier {
       handovers..clear()..addAll(((s['handovers'] as List?)??[]).map((e)=>ShiftHandover.fromJson(Map<String,dynamic>.from(e))));
       knowledge..clear()..addEntries(((s['knowledge'] as List?)??[]).map((e){final k=EquipmentKnowledge.fromJson(Map<String,dynamic>.from(e));return MapEntry(k.tag,k);}));
       circuits..clear()..addAll(((s['circuits'] as List?)??[]).map((e)=>ProcessCircuit.fromJson(Map<String,dynamic>.from(e))));
+      notes..clear()..addAll(((s['notes'] as List?)??[]).map((e)=>OperatorNote.fromJson(Map<String,dynamic>.from(e))));
     }
     hydrated=true; notifyListeners();
   }
-  Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList(),'currentShift':currentShift?.toJson(),'handovers':handovers.map((e)=>e.toJson()).toList(),'knowledge':knowledge.values.map((e)=>e.toJson()).toList(),'circuits':circuits.map((e)=>e.toJson()).toList()});
+  Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList(),'currentShift':currentShift?.toJson(),'handovers':handovers.map((e)=>e.toJson()).toList(),'knowledge':knowledge.values.map((e)=>e.toJson()).toList(),'circuits':circuits.map((e)=>e.toJson()).toList(),'notes':notes.map((e)=>e.toJson()).toList()});
   void _changed(){notifyListeners();_persist();}
 
   final List<Equipment> equipment = [
@@ -66,6 +69,10 @@ class AppStore extends ChangeNotifier {
   void saveKnowledge(EquipmentKnowledge item){item.updatedAt=DateTime.now();knowledge[item.tag]=item;addLog('Knowledge updated · ${item.tag}',tag:item.tag);}
   void saveCircuit(ProcessCircuit circuit){circuit.updatedAt=DateTime.now();final i=circuits.indexWhere((e)=>e.id==circuit.id);if(i<0){circuits.add(circuit);}else{circuits[i]=circuit;}addLog('Process circuit updated · ${circuit.name}');}
   List<ProcessCircuit> circuitsForTag(String tag)=>circuits.where((c)=>c.nodes.any((n)=>n.tag==tag)).toList();
+  void addNote(String title,String body,{String? tag,bool pinned=false}){final clean=body.trim();if(clean.isEmpty)return;notes.insert(0,OperatorNote(id:DateTime.now().microsecondsSinceEpoch.toString(),createdAt:DateTime.now(),title:title.trim().isEmpty?'Operator note':title.trim(),body:clean,equipmentTag:tag,pinned:pinned));_changed();}
+  void toggleNotePin(OperatorNote n){n.pinned=!n.pinned;_changed();}
+  void resolveNote(OperatorNote n){n.resolved=true;addLog('Note resolved · ${n.title}',tag:n.equipmentTag);}
+  void resolveWatch(WatchItem w){w.active=false;addLog('Watch item resolved · ${w.title}',tag:w.equipmentTag);}
   ShiftHandover? get pendingHandover {for(final h in handovers){if(!h.accepted)return h;}return null;}
   List<OperatorTask> get carriedTasks=>tasks.where((e)=>e.state!=ActionState.completed&&e.carriedShifts>0).toList()..sort((a,b)=>b.carriedShifts.compareTo(a.carriedShifts));
   List<OperatorTask> get overdueTasks=>tasks.where((e)=>e.overdue).toList();
