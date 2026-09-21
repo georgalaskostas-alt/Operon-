@@ -1,0 +1,2 @@
+import 'dart:convert';import 'package:shared_preferences/shared_preferences.dart';import '../models/operator_timer.dart';
+class TimerRepository{static const key='operon.timers.v1';Future<List<OperatorTimer>> load()async{final p=await SharedPreferences.getInstance(),raw=p.getString(key);if(raw==null)return[];return(jsonDecode(raw)as List).map((e)=>OperatorTimer.fromJson(Map<String,dynamic>.from(e))).toList();}Future<void> save(List<OperatorTimer> items)async{final p=await SharedPreferences.getInstance();await p.setString(key,jsonEncode(items.map((e)=>e.toJson()).toList()));}}
