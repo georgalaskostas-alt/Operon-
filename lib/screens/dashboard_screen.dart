@@ -1,36 +1,5 @@
-import 'package:flutter/material.dart';
-import '../data/app_store.dart';
-import '../models/models.dart';
-import '../theme/operon_theme.dart';
-import '../widgets/common.dart';
-
-class DashboardScreen extends StatelessWidget {
-  final AppStore store;
-  const DashboardScreen({super.key, required this.store});
-
-  @override Widget build(BuildContext context) => ListView(children: [
-    const OperonHeader('Good shift.', subtitle: 'Operator workspace · Live local data'),
-    Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Row(children: [
-      _metric('Open', store.tasks.where((e)=>e.state != ActionState.completed).length.toString(), Icons.warning_amber_rounded),
-      const SizedBox(width: 10),
-      _metric('Maintenance', store.equipment.where((e)=>e.state == EquipmentState.maintenance).length.toString(), Icons.build_rounded),
-      const SizedBox(width: 10),
-      _metric('Watch', store.watch.where((e)=>e.active).length.toString(), Icons.visibility_rounded),
-    ])),
-    const SectionLabel('Watchlist'),
-    ...store.watch.where((e)=>e.active).map((e)=>ListTile(
-      leading: const Icon(Icons.circle, size: 10, color: OperonTheme.teal),
-      title: Text(e.equipmentTag ?? e.title, style: const TextStyle(fontWeight: FontWeight.w700)),
-      subtitle: Text('${e.title} · ${e.detail}'),
-    )),
-    const SectionLabel('Recent log'),
-    ...store.logs.take(6).map((e)=>ListTile(leading: SizedBox(width: 48, child: Text(hhmm(e.createdAt), style: const TextStyle(color: OperonTheme.muted))), title: Text(e.text), subtitle: e.equipmentTag == null ? null : Text(e.equipmentTag!))),
-    const SizedBox(height: 100),
-  ]);
-
-  Widget _metric(String label, String value, IconData icon) => Expanded(child: Container(
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(color: OperonTheme.panel, borderRadius: BorderRadius.circular(18)),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(icon, color: OperonTheme.teal), const SizedBox(height: 12), Text(value, style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w800)), Text(label, style: const TextStyle(color: OperonTheme.muted, fontSize: 11))]),
-  ));
-}
+import 'package:flutter/material.dart';import '../data/app_store.dart';import '../data/timer_repository.dart';import '../models/models.dart';import '../models/operator_timer.dart';import '../theme/operon_theme.dart';import '../widgets/common.dart';import 'actions_screen.dart';import 'timers_screen.dart';import 'handover_screen.dart';
+class DashboardScreen extends StatefulWidget{final AppStore store;const DashboardScreen({super.key,required this.store});@override State<DashboardScreen> createState()=>_S();}
+class _S extends State<DashboardScreen>{List<OperatorTimer> timers=[];@override void initState(){super.initState();_timers();}Future<void> _timers()async{timers=await TimerRepository().load();if(mounted)setState((){});}
+@override Widget build(BuildContext c){final open=widget.store.tasks.where((e)=>e.state!=ActionState.completed).toList(),unavailable=widget.store.equipment.where((e)=>e.state==EquipmentState.maintenance||e.state==EquipmentState.outOfService||e.state==EquipmentState.taggedOut).toList(),due=timers.where((e)=>DateTime.now().isAfter(e.dueAt)).length;return RefreshIndicator(onRefresh:_timers,child:ListView(children:[const OperonHeader('Shift Control',subtitle:'What needs your attention now'),Padding(padding:const EdgeInsets.symmetric(horizontal:20),child:Row(children:[_metric('Open',open.length,Icons.pending_actions),const SizedBox(width:8),_metric('Unavailable',unavailable.length,Icons.build),const SizedBox(width:8),_metric('Timers',timers.length,Icons.timer)])),if(due>0)Padding(padding:const EdgeInsets.fromLTRB(20,14,20,0),child:Card(child:ListTile(leading:const Icon(Icons.notifications_active,color:Colors.orange),title:Text('$due timer${due==1?'':'s'} due',style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:const Text('Open timers and acknowledge the reminder.'),onTap:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>const TimersScreen())).then((_)=>_timers())))),const SectionLabel('Needs attention'),...unavailable.map((e)=>ListTile(leading:const Icon(Icons.precision_manufacturing,color:OperonTheme.teal),title:Text(e.tag,style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Text('${e.state.name} · ${e.note.isEmpty?e.name:e.note}'))),...open.take(4).map((e)=>ListTile(leading:const Icon(Icons.pending_actions,color:OperonTheme.teal),title:Text(e.title),subtitle:Text(e.equipmentTag??'General'))),const SectionLabel('Watchlist'),...widget.store.watch.where((e)=>e.active).take(4).map((e)=>ListTile(leading:const Icon(Icons.visibility,color:OperonTheme.teal),title:Text(e.equipmentTag??e.title),subtitle:Text('${e.title} · ${e.detail}'))),Padding(padding:const EdgeInsets.all(20),child:Row(children:[Expanded(child:OutlinedButton.icon(onPressed:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>ActionsScreen(store:widget.store))),icon:const Icon(Icons.pending_actions),label:const Text('Actions'))),const SizedBox(width:8),Expanded(child:FilledButton.icon(onPressed:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>HandoverScreen(store:widget.store))),icon:const Icon(Icons.handshake),label:const Text('Handover')))])),const SectionLabel('Recent log'),...widget.store.logs.take(5).map((e)=>ListTile(leading:SizedBox(width:48,child:Text(hhmm(e.createdAt),style:const TextStyle(color:OperonTheme.muted))),title:Text(e.text),subtitle:e.equipmentTag==null?null:Text(e.equipmentTag!))),const SizedBox(height:100)]));}
+Widget _metric(String label,int value,IconData icon)=>Expanded(child:Container(padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:OperonTheme.panel,borderRadius:BorderRadius.circular(18)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Icon(icon,color:OperonTheme.teal),const SizedBox(height:8),Text('$value',style:const TextStyle(fontSize:23,fontWeight:FontWeight.w800)),Text(label,style:const TextStyle(color:OperonTheme.muted,fontSize:10))])));}
