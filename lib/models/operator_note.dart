@@ -1,4 +1,1 @@
-class OperatorNote {
-  final String id; final DateTime createdAt; final String title; final String body; final String? equipmentTag; final bool pinned;
-  const OperatorNote({required this.id,required this.createdAt,required this.title,required this.body,this.equipmentTag,this.pinned=false});
-}
+class OperatorNote{final String id;final DateTime createdAt;String title,body;final String? equipmentTag;bool pinned,resolved;OperatorNote({required this.id,required this.createdAt,required this.title,required this.body,this.equipmentTag,this.pinned=false,this.resolved=false});Map<String,dynamic> toJson()=>{'id':id,'createdAt':createdAt.toIso8601String(),'title':title,'body':body,'equipmentTag':equipmentTag,'pinned':pinned,'resolved':resolved};factory OperatorNote.fromJson(Map<String,dynamic> j)=>OperatorNote(id:j['id']??'',createdAt:DateTime.tryParse(j['createdAt']??'')??DateTime.now(),title:j['title']??'',body:j['body']??'',equipmentTag:j['equipmentTag'],pinned:j['pinned']??false,resolved:j['resolved']??false);}
