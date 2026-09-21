@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import '../models/shift_handover.dart';
+import '../models/equipment_knowledge.dart';
 import 'local_repository.dart';
 
 class AppStore extends ChangeNotifier {
@@ -8,6 +9,7 @@ class AppStore extends ChangeNotifier {
   bool hydrated=false;
   ShiftSession? currentShift;
   final List<ShiftHandover> handovers=[];
+  final Map<String,EquipmentKnowledge> knowledge={};
 
   Future<void> hydrate() async {
     final s=await _repository.load();
@@ -18,10 +20,11 @@ class AppStore extends ChangeNotifier {
       tasks..clear()..addAll(((s['tasks'] as List?)??[]).map((e)=>OperatorTask.fromJson(Map<String,dynamic>.from(e))));
       if(s['currentShift']!=null) currentShift=ShiftSession.fromJson(Map<String,dynamic>.from(s['currentShift']));
       handovers..clear()..addAll(((s['handovers'] as List?)??[]).map((e)=>ShiftHandover.fromJson(Map<String,dynamic>.from(e))));
+      knowledge..clear()..addEntries(((s['knowledge'] as List?)??[]).map((e){final k=EquipmentKnowledge.fromJson(Map<String,dynamic>.from(e));return MapEntry(k.tag,k);}));
     }
     hydrated=true; notifyListeners();
   }
-  Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList(),'currentShift':currentShift?.toJson(),'handovers':handovers.map((e)=>e.toJson()).toList()});
+  Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList(),'currentShift':currentShift?.toJson(),'handovers':handovers.map((e)=>e.toJson()).toList(),'knowledge':knowledge.values.map((e)=>e.toJson()).toList()});
   void _changed(){notifyListeners();_persist();}
 
   final List<Equipment> equipment = [
@@ -56,6 +59,8 @@ class AppStore extends ChangeNotifier {
   void endShift(){final s=currentShift;if(s==null||!s.active)return;s.endedAt=DateTime.now();addLog('Shift ended · ${s.type.name} · ${s.operatorName}');}
   void saveHandover(ShiftHandover h){handovers.insert(0,h);addLog('Handover prepared · ${h.outgoingOperator} · ${h.outgoingShift}');}
   void acceptHandover(ShiftHandover h,String incoming){if(h.accepted)return;h.incomingOperator=incoming.trim();h.acceptedAt=DateTime.now();addLog('Handover accepted · ${h.outgoingOperator} → ${incoming.trim()}');}
+  EquipmentKnowledge knowledgeFor(String tag)=>knowledge.putIfAbsent(tag,()=>EquipmentKnowledge(tag:tag));
+  void saveKnowledge(EquipmentKnowledge item){item.updatedAt=DateTime.now();knowledge[item.tag]=item;addLog('Knowledge updated · ${item.tag}',tag:item.tag);}
   ShiftHandover? get pendingHandover {for(final h in handovers){if(!h.accepted)return h;}return null;}
   List<OperatorTask> get carriedTasks=>tasks.where((e)=>e.state!=ActionState.completed&&e.carriedShifts>0).toList()..sort((a,b)=>b.carriedShifts.compareTo(a.carriedShifts));
   List<OperatorTask> get overdueTasks=>tasks.where((e)=>e.overdue).toList();
