@@ -11,6 +11,7 @@ void main()=>runApp(const OperonApp());
 class OperonApp extends StatefulWidget{const OperonApp({super.key});@override State<OperonApp> createState()=>_OperonAppState();}
 class _OperonAppState extends State<OperonApp>{
  final store=AppStore();
+ @override void initState(){super.initState();store.hydrate();}
  @override Widget build(BuildContext context)=>MaterialApp(debugShowCheckedModeBanner:false,title:'OPERON',theme:OperonTheme.dark(),home:AnimatedBuilder(animation:store,builder:(_,__)=>Shell(store:store)));
 }
 class Shell extends StatefulWidget{final AppStore store;const Shell({super.key,required this.store});@override State<Shell> createState()=>_ShellState();}
