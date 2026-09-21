@@ -17,7 +17,7 @@ class AppStore extends ChangeNotifier {
     hydrated=true; notifyListeners();
   }
   Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList()});
-  void _changed(){_changed();_persist();}
+  void _changed(){notifyListeners();_persist();}
 
   final List<Equipment> equipment = [
     Equipment(tag:'P-2101A',name:'Process Pump A',area:'Unit',state:EquipmentState.maintenance,note:'Mechanical inspection pending'),
