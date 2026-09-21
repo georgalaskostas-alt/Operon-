@@ -1,0 +1,2 @@
+import 'models.dart';
+class QuickEntryDraft{final String raw;final String? tag;final EquipmentState? equipmentState;final bool maintenanceInformed;final String? actionText;final DateTime? reminderAt;final String? watchText;final List<String> warnings;QuickEntryDraft({required this.raw,this.tag,this.equipmentState,this.maintenanceInformed=false,this.actionText,this.reminderAt,this.watchText,this.warnings=const[]});}
