@@ -5,6 +5,7 @@ import 'local_repository.dart';
 class AppStore extends ChangeNotifier {
   final LocalRepository _repository=LocalRepository();
   bool hydrated=false;
+  ShiftSession? currentShift;
 
   Future<void> hydrate() async {
     final s=await _repository.load();
@@ -13,10 +14,11 @@ class AppStore extends ChangeNotifier {
       logs..clear()..addAll(((s['logs'] as List?)??[]).map((e)=>LogEntry.fromJson(Map<String,dynamic>.from(e))));
       watch..clear()..addAll(((s['watch'] as List?)??[]).map((e)=>WatchItem.fromJson(Map<String,dynamic>.from(e))));
       tasks..clear()..addAll(((s['tasks'] as List?)??[]).map((e)=>OperatorTask.fromJson(Map<String,dynamic>.from(e))));
+      if(s['currentShift']!=null) currentShift=ShiftSession.fromJson(Map<String,dynamic>.from(s['currentShift']));
     }
     hydrated=true; notifyListeners();
   }
-  Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList()});
+  Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList(),'currentShift':currentShift?.toJson()});
   void _changed(){notifyListeners();_persist();}
 
   final List<Equipment> equipment = [
@@ -47,4 +49,7 @@ class AppStore extends ChangeNotifier {
   void addTask(String title,{String? tag}){final clean=title.trim();if(clean.isEmpty)return;tasks.insert(0,OperatorTask(id:DateTime.now().microsecondsSinceEpoch.toString(),title:clean,equipmentTag:tag));addLog('Action created: $clean',tag:tag);}
   void setTaskState(OperatorTask task,ActionState state){task.state=state;addLog('Action ${task.title} → ${state.name}',tag:task.equipmentTag);}
   void completeTask(OperatorTask task){setTaskState(task,ActionState.completed);}
+  void startShift(String operatorName,ShiftType type){if(currentShift?.active==true)return;currentShift=ShiftSession(id:DateTime.now().microsecondsSinceEpoch.toString(),operatorName:operatorName.trim(),type:type,startedAt:DateTime.now(),openingLogIndex:logs.length);addLog('Shift started · ${type.name} · ${operatorName.trim()}');}
+  void endShift(){final s=currentShift;if(s==null||!s.active)return;s.endedAt=DateTime.now();addLog('Shift ended · ${s.type.name} · ${s.operatorName}');}
+  List<LogEntry> get currentShiftLogs {final s=currentShift;if(s==null)return const[];return logs.where((e)=>!e.createdAt.isBefore(s.startedAt)&&(s.endedAt==null||!e.createdAt.isAfter(s.endedAt!))).toList();}
 }
