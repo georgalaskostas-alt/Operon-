@@ -6,8 +6,9 @@ import 'screens/logbook_screen.dart';
 import 'screens/workspace_screen.dart';
 import 'theme/operon_theme.dart';
 import 'screens/scan_notes_screen.dart';
+import 'services/notification_service.dart';
 
-void main()=>runApp(const OperonApp());
+Future<void> main() async {WidgetsFlutterBinding.ensureInitialized();await NotificationService.instance.initialize();runApp(const OperonApp());}
 
 class OperonApp extends StatefulWidget{const OperonApp({super.key});@override State<OperonApp> createState()=>_OperonAppState();}
 class _OperonAppState extends State<OperonApp>{
