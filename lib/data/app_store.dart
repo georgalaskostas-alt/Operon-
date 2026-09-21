@@ -4,6 +4,7 @@ import '../models/shift_handover.dart';
 import '../models/equipment_knowledge.dart';
 import '../models/process_circuit.dart';
 import '../models/operator_note.dart';
+import '../models/procedure_models.dart';
 import 'local_repository.dart';
 
 class AppStore extends ChangeNotifier {
@@ -14,6 +15,7 @@ class AppStore extends ChangeNotifier {
   final Map<String,EquipmentKnowledge> knowledge={};
   final List<ProcessCircuit> circuits=[];
   final List<OperatorNote> notes=[];
+  final List<ProcedureRun> procedureRuns=[];
 
   Future<void> hydrate() async {
     final s=await _repository.load();
@@ -27,10 +29,11 @@ class AppStore extends ChangeNotifier {
       knowledge..clear()..addEntries(((s['knowledge'] as List?)??[]).map((e){final k=EquipmentKnowledge.fromJson(Map<String,dynamic>.from(e));return MapEntry(k.tag,k);}));
       circuits..clear()..addAll(((s['circuits'] as List?)??[]).map((e)=>ProcessCircuit.fromJson(Map<String,dynamic>.from(e))));
       notes..clear()..addAll(((s['notes'] as List?)??[]).map((e)=>OperatorNote.fromJson(Map<String,dynamic>.from(e))));
+      procedureRuns..clear()..addAll(((s['procedureRuns'] as List?)??[]).map((e)=>ProcedureRun.fromJson(Map<String,dynamic>.from(e))));
     }
     hydrated=true; notifyListeners();
   }
-  Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList(),'currentShift':currentShift?.toJson(),'handovers':handovers.map((e)=>e.toJson()).toList(),'knowledge':knowledge.values.map((e)=>e.toJson()).toList(),'circuits':circuits.map((e)=>e.toJson()).toList(),'notes':notes.map((e)=>e.toJson()).toList()});
+  Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList(),'currentShift':currentShift?.toJson(),'handovers':handovers.map((e)=>e.toJson()).toList(),'knowledge':knowledge.values.map((e)=>e.toJson()).toList(),'circuits':circuits.map((e)=>e.toJson()).toList(),'notes':notes.map((e)=>e.toJson()).toList(),'procedureRuns':procedureRuns.map((e)=>e.toJson()).toList()});
   void _changed(){notifyListeners();_persist();}
 
   final List<Equipment> equipment = [
@@ -49,6 +52,7 @@ class AppStore extends ChangeNotifier {
     WatchItem(id:'w2',title:'Monitor ΔP',detail:'Shift watch item',equipmentTag:'E-2204'),
   ];
   final List<OperatorTask> tasks = [OperatorTask(id:'t1',title:'Follow up mechanical inspection',equipmentTag:'P-2101A')];
+  final List<ControlledProcedure> controlledProcedures=const [ControlledProcedure(id:'handover',title:'Shift handover',category:'Operations',source:'OPERON controlled checklist',version:'1.0',steps:[ProcedureStep(id:'open',title:'Review open actions'),ProcedureStep(id:'equipment',title:'Review unavailable / maintenance equipment'),ProcedureStep(id:'watch',title:'Review active watch items'),ProcedureStep(id:'timers',title:'Review incomplete timers'),ProcedureStep(id:'accept',title:'Incoming operator confirms receipt')])];
   final List<ProcedureItem> procedures = const [
     ProcedureItem('Pump changeover','Operations','Approved procedure required'),
     ProcedureItem('Equipment isolation','Safety','Official LOTO/PTW procedure required'),
@@ -73,6 +77,9 @@ class AppStore extends ChangeNotifier {
   void toggleNotePin(OperatorNote n){n.pinned=!n.pinned;_changed();}
   void resolveNote(OperatorNote n){n.resolved=true;addLog('Note resolved · ${n.title}',tag:n.equipmentTag);}
   void resolveWatch(WatchItem w){w.active=false;addLog('Watch item resolved · ${w.title}',tag:w.equipmentTag);}
+  ProcedureRun startProcedure(ControlledProcedure p){final r=ProcedureRun(id:DateTime.now().microsecondsSinceEpoch.toString(),procedureId:p.id,procedureTitle:p.title,version:p.version,source:p.source,operatorName:currentShift?.operatorName??'Operator',startedAt:DateTime.now(),records:p.steps.map((e)=>StepRecord(stepId:e.id)).toList());procedureRuns.insert(0,r);addLog('Procedure started · ${p.title} · v${p.version}');return r;}
+  void setProcedureStep(ProcedureRun r,String stepId,bool confirmed,{String note=''}){final x=r.records.firstWhere((e)=>e.stepId==stepId);x.confirmed=confirmed;x.confirmedAt=confirmed?DateTime.now():null;x.note=note;addLog('Procedure ${r.procedureTitle} · step $stepId → ${confirmed?'confirmed':'reopened'}');}
+  void setProcedureRunState(ProcedureRun r,ProcedureRunState state){r.state=state;if(state==ProcedureRunState.completed)r.completedAt=DateTime.now();addLog('Procedure ${r.procedureTitle} → ${state.name}');}
   ShiftHandover? get pendingHandover {for(final h in handovers){if(!h.accepted)return h;}return null;}
   List<OperatorTask> get carriedTasks=>tasks.where((e)=>e.state!=ActionState.completed&&e.carriedShifts>0).toList()..sort((a,b)=>b.carriedShifts.compareTo(a.carriedShifts));
   List<OperatorTask> get overdueTasks=>tasks.where((e)=>e.overdue).toList();
