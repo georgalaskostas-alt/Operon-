@@ -24,6 +24,10 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>OPERON uses the camera to capture operator notes and equipment information for on-device text recognition.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>OPERON can import note images from your photo library for on-device text recognition.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
