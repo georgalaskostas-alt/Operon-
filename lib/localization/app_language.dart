@@ -269,6 +269,28 @@ class OperonStrings {
   String get practicalBackedInfo => pick('Practical source-backed information', 'Πρακτική τεκμηριωμένη πληροφορία');
   String get sourceOwnerHint => pick('Procedure, manual, approved note, responsible role', 'Διαδικασία, εγχειρίδιο, εγκεκριμένη σημείωση, υπεύθυνος ρόλος');
   String get saveOperationalKnowledge => pick('Save operational knowledge', 'Αποθήκευση λειτουργικής γνώσης');
+
+  String get operationalKnowledge => pick('Operational knowledge', 'Λειτουργική γνώση');
+  String get recordedNormalRange => pick('Recorded normal range', 'Καταγεγραμμένο κανονικό εύρος');
+  String get valvePosition => pick('Valve / position', 'Βαλβίδα / θέση');
+  String get circuitNote => pick('Circuit note', 'Σημείωση κυκλώματος');
+  String get operatorKnowledge => pick('Operator knowledge', 'Γνώση χειριστή');
+  String get source => pick('Source', 'Πηγή');
+  String get reviewKnowledge => pick('Review knowledge', 'Έλεγχος γνώσης');
+  String get addOperationalKnowledge => pick('Add operational knowledge', 'Προσθήκη λειτουργικής γνώσης');
+  String get processContext => pick('Process context', 'Πλαίσιο διεργασίας');
+  String get noPidRecorded => pick('No P&ID reference recorded', 'Δεν έχει καταγραφεί αναφορά P&ID');
+  String get linkedProcedures => pick('Linked procedures', 'Συνδεδεμένες διαδικασίες');
+  String get activeWatch => pick('Active watch', 'Ενεργή παρακολούθηση');
+  String get recordedHistory => pick('Recorded history', 'Καταγεγραμμένο ιστορικό');
+  String get noRecordedEvents => pick('No recorded events', 'Δεν υπάρχουν καταγεγραμμένα συμβάντα');
+  String get circuits => pick('CIRCUITS', 'ΚΥΚΛΩΜΑΤΑ');
+  String get watch => pick('WATCH', 'ΠΑΡΑΚΟΛΟΥΘΗΣΗ');
+  String get actionsUpper => pick('ACTIONS', 'ΕΝΕΡΓΕΙΕΣ');
+  String get notesUpper => pick('NOTES', 'ΣΗΜΕΙΩΣΕΙΣ');
+  String get upstream => pick('upstream', 'ανάντη');
+  String get downstream => pick('downstream', 'κατάντη');
+  String get process => pick('process', 'διεργασία');
 }
 
 extension OperonLocalization on BuildContext {
