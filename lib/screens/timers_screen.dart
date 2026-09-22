@@ -167,6 +167,7 @@ class _S extends State<TimersScreen> {
     final name = TextEditingController(text: tr.check);
     final tag = TextEditingController();
     int minutes = 30;
+    final customMinutes = TextEditingController();
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -183,18 +184,46 @@ class _S extends State<TimersScreen> {
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
+              runSpacing: 8,
               children: [5, 10, 15, 30, 60]
                   .map((m) => ChoiceChip(
                         label: Text('${m}m'),
-                        selected: minutes == m,
-                        onSelected: (_) => setDialogState(() => minutes = m),
+                        selected: minutes == m && customMinutes.text.isEmpty,
+                        onSelected: (_) => setDialogState(() {
+                          minutes = m;
+                          customMinutes.clear();
+                        }),
                       ))
                   .toList(),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: customMinutes,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Custom minutes',
+                hintText: 'e.g. 7, 45, 120',
+                suffixText: 'min',
+              ),
+              onChanged: (value) {
+                final parsed = int.tryParse(value);
+                if (parsed != null && parsed > 0) {
+                  setDialogState(() => minutes = parsed);
+                } else {
+                  setDialogState(() {});
+                }
+              },
             )
           ]),
           actions: [
             FilledButton(
               onPressed: () {
+                final custom = customMinutes.text.trim();
+                if (custom.isNotEmpty) {
+                  final parsed = int.tryParse(custom);
+                  if (parsed == null || parsed <= 0) return;
+                  minutes = parsed;
+                }
                 final now = DateTime.now();
                 final timer = OperatorTimer(
                   id: now.millisecondsSinceEpoch.remainder(2147483647),
