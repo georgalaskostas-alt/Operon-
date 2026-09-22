@@ -167,6 +167,7 @@ class _S extends State<TimersScreen> {
     final name = TextEditingController(text: tr.check);
     final tag = TextEditingController();
     int minutes = 30;
+    final customHours = TextEditingController();
     final customMinutes = TextEditingController();
     showDialog(
       context: context,
@@ -188,41 +189,60 @@ class _S extends State<TimersScreen> {
               children: [5, 10, 15, 30, 60]
                   .map((m) => ChoiceChip(
                         label: Text('${m}m'),
-                        selected: minutes == m && customMinutes.text.isEmpty,
+                        selected: minutes == m &&
+                            customHours.text.isEmpty &&
+                            customMinutes.text.isEmpty,
                         onSelected: (_) => setDialogState(() {
                           minutes = m;
+                          customHours.clear();
                           customMinutes.clear();
                         }),
                       ))
                   .toList(),
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: customMinutes,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Custom minutes',
-                hintText: 'e.g. 7, 45, 120',
-                suffixText: 'min',
-              ),
-              onChanged: (value) {
-                final parsed = int.tryParse(value);
-                if (parsed != null && parsed > 0) {
-                  setDialogState(() => minutes = parsed);
-                } else {
-                  setDialogState(() {});
-                }
-              },
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: customHours,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Hours',
+                      hintText: '0',
+                      suffixText: 'h',
+                    ),
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: customMinutes,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Minutes',
+                      hintText: '0',
+                      suffixText: 'min',
+                    ),
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                ),
+              ],
             )
           ]),
           actions: [
             FilledButton(
               onPressed: () {
-                final custom = customMinutes.text.trim();
-                if (custom.isNotEmpty) {
-                  final parsed = int.tryParse(custom);
-                  if (parsed == null || parsed <= 0) return;
-                  minutes = parsed;
+                final hoursText = customHours.text.trim();
+                final minutesText = customMinutes.text.trim();
+                if (hoursText.isNotEmpty || minutesText.isNotEmpty) {
+                  final hours = hoursText.isEmpty ? 0 : int.tryParse(hoursText);
+                  final mins = minutesText.isEmpty ? 0 : int.tryParse(minutesText);
+                  if (hours == null || mins == null || hours < 0 || mins < 0) return;
+                  final total = hours * 60 + mins;
+                  if (total <= 0) return;
+                  minutes = total;
                 }
                 final now = DateTime.now();
                 final timer = OperatorTimer(
