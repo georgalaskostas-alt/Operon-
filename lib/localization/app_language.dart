@@ -213,6 +213,62 @@ class OperonStrings {
   String get saveCircuit => pick('Save circuit', 'Αποθήκευση κυκλώματος');
   String get processCircuitDefault => pick('Process circuit', 'Κύκλωμα διεργασίας');
   String get approvedReferenceRequired => pick('Approved reference required', 'Απαιτείται εγκεκριμένη αναφορά');
+
+  String get shiftSession => pick('Shift session', 'Συνεδρία βάρδιας');
+  String get startShift => pick('Start shift', 'Έναρξη βάρδιας');
+  String get carriedInfo => pick('Open work is automatically marked as carried into the new shift.', 'Οι ανοιχτές εργασίες επισημαίνονται αυτόματα ως μεταφερόμενες στη νέα βάρδια.');
+  String get operatorName => pick('Operator name', 'Όνομα χειριστή');
+  String get shift => pick('Shift', 'Βάρδια');
+  String get carriedOver => pick('Carried over', 'Μεταφερόμενα');
+  String get overdue => pick('Overdue', 'Εκπρόθεσμα');
+  String get newThisShift => pick('New this shift', 'Νέα σε αυτή τη βάρδια');
+  String get activityThisShift => pick('Activity this shift', 'Δραστηριότητα βάρδιας');
+  String get reviewHandover => pick('Review handover', 'Έλεγχος παράδοσης');
+  String get endShift => pick('End shift', 'Λήξη βάρδιας');
+  String get carried => pick('carried', 'μεταφερόμενα');
+  String get newLabel => pick('NEW', 'ΝΕΟ');
+  String get carriedLabel => pick('CARRIED', 'ΜΕΤΑΦΕΡΘΗΚΕ');
+  String get overdueLabel => pick('OVERDUE', 'ΕΚΠΡΟΘΕΣΜΟ');
+
+  String get operatorConfirmSafety => pick(
+    'Operator confirmations are recorded. OPERON does not independently verify plant state, isolation, PTW or LOTO.',
+    'Οι επιβεβαιώσεις του χειριστή καταγράφονται. Το OPERON δεν επαληθεύει ανεξάρτητα την κατάσταση της μονάδας, την απομόνωση, PTW ή LOTO.',
+  );
+  String get confirmed => pick('confirmed', 'επιβεβαιωμένα');
+  String get safetyCritical => pick('SAFETY-CRITICAL · explicit operator confirmation required', 'ΚΡΙΣΙΜΟ ΓΙΑ ΑΣΦΑΛΕΙΑ · απαιτείται ρητή επιβεβαίωση χειριστή');
+  String get notConfirmed => pick('Not confirmed', 'Δεν επιβεβαιώθηκε');
+  String get confirmedAt => pick('Confirmed', 'Επιβεβαιώθηκε');
+  String get resume => pick('Resume', 'Συνέχιση');
+  String get pause => pick('Pause', 'Παύση');
+  String get completeRun => pick('Complete run', 'Ολοκλήρωση εκτέλεσης');
+  String get explicitConfirmation => pick('Explicit confirmation', 'Ρητή επιβεβαίωση');
+  String criticalConfirmation(String step) => pick(
+    'Confirm only if you personally verified/completed this step according to the controlled procedure:\n\n$step',
+    'Επιβεβαίωσε μόνο εφόσον επαλήθευσες/ολοκλήρωσες προσωπικά αυτό το βήμα σύμφωνα με την ελεγχόμενη διαδικασία:\n\n$step',
+  );
+  String get cancel => pick('Cancel', 'Ακύρωση');
+  String get iConfirm => pick('I confirm', 'Επιβεβαιώνω');
+
+  String knowledgeTitle(String tag) => pick('$tag Knowledge', '$tag Γνώση');
+  String get controlledKnowledge => pick('Controlled operational knowledge', 'Ελεγχόμενη λειτουργική γνώση');
+  String get knowledgeSafety => pick(
+    'Enter only site-approved or source-backed information. OPERON does not invent operating limits, valve positions or procedure requirements.',
+    'Καταχώρισε μόνο εγκεκριμένες ή τεκμηριωμένες πληροφορίες της εγκατάστασης. Το OPERON δεν επινοεί λειτουργικά όρια, θέσεις βαλβίδων ή απαιτήσεις διαδικασιών.',
+  );
+  String get normalOperatingRange => pick('Normal operating range', 'Κανονικό εύρος λειτουργίας');
+  String get normalRangeHint => pick('e.g. approved normal range + units', 'π.χ. εγκεκριμένο κανονικό εύρος + μονάδες');
+  String get valveGuidance => pick('Valve / position guidance', 'Οδηγία βαλβίδας / θέσης');
+  String get valveGuidanceHint => pick('Recorded normal position or operating band', 'Καταγεγραμμένη κανονική θέση ή εύρος λειτουργίας');
+  String get processCircuit => pick('Process circuit', 'Κύκλωμα διεργασίας');
+  String get processCircuitHint => pick('Where this equipment sits in the process', 'Θέση του εξοπλισμού στη διεργασία');
+  String get relatedTags => pick('Related equipment TAGs', 'Σχετικά TAG εξοπλισμού');
+  String get commaSeparated => pick('Comma separated', 'Χωρισμένα με κόμμα');
+  String get approvedProcedureRefs => pick('Approved procedure / document references', 'Εγκεκριμένες αναφορές διαδικασιών / εγγράφων');
+  String get oneReferencePerLine => pick('One reference per line', 'Μία αναφορά ανά γραμμή');
+  String get operatorKnowledgeNotes => pick('Operator knowledge / notes', 'Γνώση / σημειώσεις χειριστή');
+  String get practicalBackedInfo => pick('Practical source-backed information', 'Πρακτική τεκμηριωμένη πληροφορία');
+  String get sourceOwnerHint => pick('Procedure, manual, approved note, responsible role', 'Διαδικασία, εγχειρίδιο, εγκεκριμένη σημείωση, υπεύθυνος ρόλος');
+  String get saveOperationalKnowledge => pick('Save operational knowledge', 'Αποθήκευση λειτουργικής γνώσης');
 }
 
 extension OperonLocalization on BuildContext {
