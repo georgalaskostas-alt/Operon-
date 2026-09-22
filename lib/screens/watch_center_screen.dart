@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/app_store.dart';
+import '../localization/app_language.dart';
 import '../theme/operon_theme.dart';
 
 class WatchCenterScreen extends StatefulWidget {
@@ -12,8 +13,8 @@ class _WatchCenterScreenState extends State<WatchCenterScreen> {
   Widget build(BuildContext context) {
     final active = widget.store.watch.where((item) => item.active).toList();
     return Scaffold(
-      appBar: AppBar(title: const Text('Watch center')),
-      body: active.isEmpty ? const Center(child: Text('No active watch items')) : ListView(
+      appBar: AppBar(title: Text(context.tr.watchCenter)),
+      body: active.isEmpty ? Center(child: Text(context.tr.noActiveWatch)) : ListView(
         padding: const EdgeInsets.all(12),
         children: active.map((item) => Card(
           child: ListTile(
