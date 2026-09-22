@@ -5,6 +5,7 @@ import '../models/equipment_knowledge.dart';
 import '../models/process_circuit.dart';
 import '../models/operator_note.dart';
 import '../models/procedure_models.dart';
+import '../models/audit_event.dart';
 import 'local_repository.dart';
 
 class AppStore extends ChangeNotifier {
@@ -16,6 +17,8 @@ class AppStore extends ChangeNotifier {
   final List<ProcessCircuit> circuits=[];
   final List<OperatorNote> notes=[];
   final List<ProcedureRun> procedureRuns=[];
+  final List<ShiftSession> shiftHistory=[];
+  final List<AuditEvent> auditEvents=[];
 
   Future<void> hydrate() async {
     final s=await _repository.load();
@@ -30,11 +33,14 @@ class AppStore extends ChangeNotifier {
       circuits..clear()..addAll(((s['circuits'] as List?)??[]).map((e)=>ProcessCircuit.fromJson(Map<String,dynamic>.from(e))));
       notes..clear()..addAll(((s['notes'] as List?)??[]).map((e)=>OperatorNote.fromJson(Map<String,dynamic>.from(e))));
       procedureRuns..clear()..addAll(((s['procedureRuns'] as List?)??[]).map((e)=>ProcedureRun.fromJson(Map<String,dynamic>.from(e))));
+      shiftHistory..clear()..addAll(((s['shiftHistory'] as List?)??[]).map((e)=>ShiftSession.fromJson(Map<String,dynamic>.from(e))));
+      auditEvents..clear()..addAll(((s['auditEvents'] as List?)??[]).map((e)=>AuditEvent.fromJson(Map<String,dynamic>.from(e))));
     }
     hydrated=true; notifyListeners();
   }
-  Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList(),'currentShift':currentShift?.toJson(),'handovers':handovers.map((e)=>e.toJson()).toList(),'knowledge':knowledge.values.map((e)=>e.toJson()).toList(),'circuits':circuits.map((e)=>e.toJson()).toList(),'notes':notes.map((e)=>e.toJson()).toList(),'procedureRuns':procedureRuns.map((e)=>e.toJson()).toList()});
+  Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList(),'currentShift':currentShift?.toJson(),'handovers':handovers.map((e)=>e.toJson()).toList(),'knowledge':knowledge.values.map((e)=>e.toJson()).toList(),'circuits':circuits.map((e)=>e.toJson()).toList(),'notes':notes.map((e)=>e.toJson()).toList(),'procedureRuns':procedureRuns.map((e)=>e.toJson()).toList(),'shiftHistory':shiftHistory.map((e)=>e.toJson()).toList(),'auditEvents':auditEvents.map((e)=>e.toJson()).toList()});
   void _changed(){notifyListeners();_persist();}
+  void _audit(String type,String summary,{String? tag,String source='app',String? entityId}){auditEvents.insert(0,AuditEvent(id:DateTime.now().microsecondsSinceEpoch.toString(),type:type,summary:summary,source:source,createdAt:DateTime.now(),equipmentTag:tag,shiftId:currentShift?.id,entityId:entityId));}
 
   final List<Equipment> equipment = [
     Equipment(tag:'P-2101A',name:'Process Pump A',area:'Unit',state:EquipmentState.maintenance,note:'Mechanical inspection pending'),
@@ -59,14 +65,14 @@ class AppStore extends ChangeNotifier {
     ProcedureItem('Shift handover','Operations','OPERON checklist'),
   ];
 
-  void addLog(String text,{String? tag}){final clean=text.trim();if(clean.isEmpty)return;logs.insert(0,LogEntry(id:DateTime.now().microsecondsSinceEpoch.toString(),createdAt:DateTime.now(),text:clean,equipmentTag:tag));_changed();}
+  void addLog(String text,{String? tag,String source='manual',Priority priority=Priority.normal}){final clean=text.trim();if(clean.isEmpty)return;final id=DateTime.now().microsecondsSinceEpoch.toString();logs.insert(0,LogEntry(id:id,createdAt:DateTime.now(),text:clean,equipmentTag:tag,source:source,priority:priority));_audit('log.created',clean,tag:tag,source:source,entityId:id);_changed();}
   void setEquipmentState(Equipment item,EquipmentState state){item.state=state;addLog('${item.tag} → ${state.name}',tag:item.tag);}
   void addWatch(String title,String detail,{String? tag}){watch.insert(0,WatchItem(id:DateTime.now().microsecondsSinceEpoch.toString(),title:title,detail:detail,equipmentTag:tag));_changed();}
-  void addTask(String title,{String? tag}){final clean=title.trim();if(clean.isEmpty)return;tasks.insert(0,OperatorTask(id:DateTime.now().microsecondsSinceEpoch.toString(),title:clean,equipmentTag:tag));addLog('Action created: $clean',tag:tag);}
+  void addTask(String title,{String? tag}){final clean=title.trim();if(clean.isEmpty)return;tasks.insert(0,OperatorTask(id:DateTime.now().microsecondsSinceEpoch.toString(),title:clean,equipmentTag:tag,createdShiftId:currentShift?.id));addLog('Action created: $clean',tag:tag);}
   void setTaskState(OperatorTask task,ActionState state){task.state=state;addLog('Action ${task.title} → ${state.name}',tag:task.equipmentTag);}
   void completeTask(OperatorTask task){setTaskState(task,ActionState.completed);}
-  void startShift(String operatorName,ShiftType type){if(currentShift?.active==true)return;for(final t in tasks.where((x)=>x.state!=ActionState.completed)){t.carriedShifts++;}currentShift=ShiftSession(id:DateTime.now().microsecondsSinceEpoch.toString(),operatorName:operatorName.trim(),type:type,startedAt:DateTime.now(),openingLogIndex:logs.length);addLog('Shift started · ${type.name} · ${operatorName.trim()}');}
-  void endShift(){final s=currentShift;if(s==null||!s.active)return;s.endedAt=DateTime.now();addLog('Shift ended · ${s.type.name} · ${s.operatorName}');}
+  void startShift(String operatorName,ShiftType type){if(currentShift?.active==true)return;final id=DateTime.now().microsecondsSinceEpoch.toString();for(final t in tasks.where((x)=>x.state!=ActionState.completed)){if(t.createdShiftId!=null&&t.createdShiftId!=id&&t.lastCarriedShiftId!=id){t.carriedShifts++;t.lastCarriedShiftId=id;}}currentShift=ShiftSession(id:id,operatorName:operatorName.trim(),type:type,startedAt:DateTime.now(),openingLogIndex:logs.length);_audit('shift.started','${type.name} · ${operatorName.trim()}',entityId:id);addLog('Shift started · ${type.name} · ${operatorName.trim()}',source:'shift');}
+  void endShift(){final s=currentShift;if(s==null||!s.active)return;s.endedAt=DateTime.now();if(!shiftHistory.any((x)=>x.id==s.id))shiftHistory.insert(0,s);_audit('shift.ended','${s.type.name} · ${s.operatorName}',entityId:s.id);addLog('Shift ended · ${s.type.name} · ${s.operatorName}',source:'shift');}
   void saveHandover(ShiftHandover h){handovers.insert(0,h);addLog('Handover prepared · ${h.outgoingOperator} · ${h.outgoingShift}');}
   void acceptHandover(ShiftHandover h,String incoming){if(h.accepted)return;h.incomingOperator=incoming.trim();h.acceptedAt=DateTime.now();addLog('Handover accepted · ${h.outgoingOperator} → ${incoming.trim()}');}
   EquipmentKnowledge knowledgeFor(String tag)=>knowledge.putIfAbsent(tag,()=>EquipmentKnowledge(tag:tag));
