@@ -55,7 +55,7 @@ class WorkspaceScreen extends StatelessWidget {
       child: ListTile(
         onTap: () => _chooseLanguage(c),
         leading: const Icon(Icons.language_rounded, color: OperonTheme.teal),
-        title: Text(t.language,
+        title: Text(t.languageLabel,
             style: const TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Text(
           controller.language == AppLanguage.el ? t.greek : t.english,
@@ -79,7 +79,7 @@ class WorkspaceScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                t.language,
+                t.languageLabel,
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
               ),
@@ -87,25 +87,31 @@ class WorkspaceScreen extends StatelessWidget {
               Text(t.languageSub,
                   style: const TextStyle(color: OperonTheme.muted)),
               const SizedBox(height: 12),
-              RadioListTile<AppLanguage>(
-                value: AppLanguage.el,
-                groupValue: controller.language,
+              ListTile(
+                onTap: () {
+                  controller.setLanguage(AppLanguage.el);
+                  Navigator.pop(sheetContext);
+                },
+                leading: Icon(
+                  controller.language == AppLanguage.el
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: OperonTheme.teal,
+                ),
                 title: Text(t.greek),
-                onChanged: (value) {
-                  if (value == null) return;
-                  controller.setLanguage(value);
-                  Navigator.pop(sheetContext);
-                },
               ),
-              RadioListTile<AppLanguage>(
-                value: AppLanguage.en,
-                groupValue: controller.language,
-                title: Text(t.english),
-                onChanged: (value) {
-                  if (value == null) return;
-                  controller.setLanguage(value);
+              ListTile(
+                onTap: () {
+                  controller.setLanguage(AppLanguage.en);
                   Navigator.pop(sheetContext);
                 },
+                leading: Icon(
+                  controller.language == AppLanguage.en
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: OperonTheme.teal,
+                ),
+                title: Text(t.english),
               ),
             ],
           ),
