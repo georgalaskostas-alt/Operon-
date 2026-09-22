@@ -67,10 +67,36 @@ class AppStore extends ChangeNotifier {
   ];
 
   void addLog(String text,{String? tag,String source='manual',Priority priority=Priority.normal}){final clean=text.trim();if(clean.isEmpty)return;final id=DateTime.now().microsecondsSinceEpoch.toString();logs.insert(0,LogEntry(id:id,createdAt:DateTime.now(),text:clean,equipmentTag:tag,source:source,priority:priority));_audit('log.created',clean,tag:tag,source:source,entityId:id);_changed();}
-  void setEquipmentState(Equipment item,EquipmentState state){item.state=state;addLog('${item.tag} → ${state.name}',tag:item.tag);}
-  void addWatch(String title,String detail,{String? tag}){watch.insert(0,WatchItem(id:DateTime.now().microsecondsSinceEpoch.toString(),title:title,detail:detail,equipmentTag:tag));_changed();}
-  void addTask(String title,{String? tag}){final clean=title.trim();if(clean.isEmpty)return;tasks.insert(0,OperatorTask(id:DateTime.now().microsecondsSinceEpoch.toString(),title:clean,equipmentTag:tag,createdShiftId:currentShift?.id));addLog('Action created: $clean',tag:tag);}
-  void setTaskState(OperatorTask task,ActionState state){task.state=state;addLog('Action ${task.title} → ${state.name}',tag:task.equipmentTag);}
+  void setEquipmentState(Equipment item,EquipmentState state){
+    if(item.state==state)return;
+    final previous=item.state;
+    item.state=state;
+    _audit('equipment.state_changed','${item.tag} · ${previous.name} → ${state.name}',tag:item.tag,source:'equipment',entityId:item.tag);
+    addLog('${item.tag} → ${state.name}',tag:item.tag,source:'equipment');
+  }
+  void addWatch(String title,String detail,{String? tag}){
+    final clean=title.trim();
+    if(clean.isEmpty)return;
+    final id=_id();
+    watch.insert(0,WatchItem(id:id,title:clean,detail:detail.trim(),equipmentTag:tag));
+    _audit('watch.created',clean,tag:tag,source:'watch',entityId:id);
+    _changed();
+  }
+  void addTask(String title,{String? tag}){
+    final clean=title.trim();
+    if(clean.isEmpty)return;
+    final id=_id();
+    tasks.insert(0,OperatorTask(id:id,title:clean,equipmentTag:tag,createdShiftId:currentShift?.id));
+    _audit('action.created',clean,tag:tag,source:'action',entityId:id);
+    addLog('Action created: $clean',tag:tag,source:'action');
+  }
+  void setTaskState(OperatorTask task,ActionState state){
+    if(task.state==state)return;
+    final previous=task.state;
+    task.state=state;
+    _audit('action.state_changed','${task.title} · ${previous.name} → ${state.name}',tag:task.equipmentTag,source:'action',entityId:task.id);
+    addLog('Action ${task.title} → ${state.name}',tag:task.equipmentTag,source:'action');
+  }
   void completeTask(OperatorTask task){setTaskState(task,ActionState.completed);}
   void startShift(String operatorName,ShiftType type){
     final clean=operatorName.trim();
@@ -113,10 +139,31 @@ class AppStore extends ChangeNotifier {
   void saveKnowledge(EquipmentKnowledge item){item.updatedAt=DateTime.now();knowledge[item.tag]=item;addLog('Knowledge updated · ${item.tag}',tag:item.tag);}
   void saveCircuit(ProcessCircuit circuit){circuit.updatedAt=DateTime.now();final i=circuits.indexWhere((e)=>e.id==circuit.id);if(i<0){circuits.add(circuit);}else{circuits[i]=circuit;}addLog('Process circuit updated · ${circuit.name}');}
   List<ProcessCircuit> circuitsForTag(String tag)=>circuits.where((c)=>c.nodes.any((n)=>n.tag==tag)).toList();
-  void addNote(String title,String body,{String? tag,bool pinned=false}){final clean=body.trim();if(clean.isEmpty)return;notes.insert(0,OperatorNote(id:DateTime.now().microsecondsSinceEpoch.toString(),createdAt:DateTime.now(),title:title.trim().isEmpty?'Operator note':title.trim(),body:clean,equipmentTag:tag,pinned:pinned));_changed();}
-  void toggleNotePin(OperatorNote n){n.pinned=!n.pinned;_changed();}
-  void resolveNote(OperatorNote n){n.resolved=true;addLog('Note resolved · ${n.title}',tag:n.equipmentTag);}
-  void resolveWatch(WatchItem w){w.active=false;addLog('Watch item resolved · ${w.title}',tag:w.equipmentTag);}
+  void addNote(String title,String body,{String? tag,bool pinned=false}){
+    final clean=body.trim();
+    if(clean.isEmpty)return;
+    final id=_id(),cleanTitle=title.trim().isEmpty?'Operator note':title.trim();
+    notes.insert(0,OperatorNote(id:id,createdAt:DateTime.now(),title:cleanTitle,body:clean,equipmentTag:tag,pinned:pinned));
+    _audit('note.created',cleanTitle,tag:tag,source:'note',entityId:id);
+    _changed();
+  }
+  void toggleNotePin(OperatorNote n){
+    n.pinned=!n.pinned;
+    _audit('note.pin_changed','${n.title} · ${n.pinned?'pinned':'unpinned'}',tag:n.equipmentTag,source:'note',entityId:n.id);
+    _changed();
+  }
+  void resolveNote(OperatorNote n){
+    if(n.resolved)return;
+    n.resolved=true;
+    _audit('note.resolved',n.title,tag:n.equipmentTag,source:'note',entityId:n.id);
+    addLog('Note resolved · ${n.title}',tag:n.equipmentTag,source:'note');
+  }
+  void resolveWatch(WatchItem w){
+    if(!w.active)return;
+    w.active=false;
+    _audit('watch.resolved',w.title,tag:w.equipmentTag,source:'watch',entityId:w.id);
+    addLog('Watch item resolved · ${w.title}',tag:w.equipmentTag,source:'watch');
+  }
   ProcedureRun startProcedure(ControlledProcedure p){final r=ProcedureRun(id:DateTime.now().microsecondsSinceEpoch.toString(),procedureId:p.id,procedureTitle:p.title,version:p.version,source:p.source,operatorName:currentShift?.operatorName??'Operator',startedAt:DateTime.now(),records:p.steps.map((e)=>StepRecord(stepId:e.id)).toList());procedureRuns.insert(0,r);addLog('Procedure started · ${p.title} · v${p.version}');return r;}
   void setProcedureStep(ProcedureRun r,String stepId,bool confirmed,{String note=''}){final x=r.records.firstWhere((e)=>e.stepId==stepId);x.confirmed=confirmed;x.confirmedAt=confirmed?DateTime.now():null;x.note=note;addLog('Procedure ${r.procedureTitle} · step $stepId → ${confirmed?'confirmed':'reopened'}');}
   void setProcedureRunState(ProcedureRun r,ProcedureRunState state){r.state=state;if(state==ProcedureRunState.completed)r.completedAt=DateTime.now();addLog('Procedure ${r.procedureTitle} → ${state.name}');}
