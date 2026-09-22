@@ -100,7 +100,7 @@ class OperonStrings {
     'Grounded assistant; local/RAG model milestone',
     'Βοηθός με τεκμηρίωση· στόχος τοπικού/RAG μοντέλου',
   );
-  String get language => pick('Language', 'Γλώσσα');
+  String get languageLabel => pick('Language', 'Γλώσσα');
   String get languageSub => pick('Choose app language', 'Επιλογή γλώσσας εφαρμογής');
   String get english => 'English';
   String get greek => 'Ελληνικά';
