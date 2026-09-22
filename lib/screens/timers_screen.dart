@@ -35,6 +35,14 @@ class _S extends State<TimersScreen> {
     timers
       ..clear()
       ..addAll(await repo.load());
+    for (final timer in timers.where((x) => x.active && !x.due)) {
+      await NotificationService.instance.scheduleTimer(
+        timer.id,
+        timer.title,
+        timer.equipmentTag,
+        timer.dueAt,
+      );
+    }
     if (mounted) setState(() {});
   }
 
@@ -117,6 +125,7 @@ class _S extends State<TimersScreen> {
                 TextButton.icon(
                   onPressed: () {
                     timer.acknowledge();
+                    NotificationService.instance.cancelTimer(timer.id);
                     _save();
                     setState(() {});
                   },
@@ -128,6 +137,7 @@ class _S extends State<TimersScreen> {
               FilledButton.icon(
                 onPressed: () {
                   timer.complete();
+                  NotificationService.instance.cancelTimer(timer.id);
                   _save();
                   setState(() {});
                 },
@@ -142,6 +152,12 @@ class _S extends State<TimersScreen> {
 
   void _snooze(OperatorTimer timer, int minutes) {
     timer.snooze(Duration(minutes: minutes));
+    NotificationService.instance.scheduleTimer(
+      timer.id,
+      timer.title,
+      timer.equipmentTag,
+      timer.dueAt,
+    );
     _save();
     setState(() {});
   }
@@ -180,17 +196,21 @@ class _S extends State<TimersScreen> {
             FilledButton(
               onPressed: () {
                 final now = DateTime.now();
-                timers.insert(
-                  0,
-                  OperatorTimer(
-                    id: now.millisecondsSinceEpoch.remainder(2147483647),
-                    title: name.text.trim().isEmpty ? tr.check : name.text.trim(),
-                    equipmentTag: tag.text.trim().isEmpty
-                        ? null
-                        : tag.text.trim().toUpperCase(),
-                    createdAt: now,
-                    dueAt: now.add(Duration(minutes: minutes)),
-                  ),
+                final timer = OperatorTimer(
+                  id: now.millisecondsSinceEpoch.remainder(2147483647),
+                  title: name.text.trim().isEmpty ? tr.check : name.text.trim(),
+                  equipmentTag: tag.text.trim().isEmpty
+                      ? null
+                      : tag.text.trim().toUpperCase(),
+                  createdAt: now,
+                  dueAt: now.add(Duration(minutes: minutes)),
+                );
+                timers.insert(0, timer);
+                NotificationService.instance.scheduleTimer(
+                  timer.id,
+                  timer.title,
+                  timer.equipmentTag,
+                  timer.dueAt,
                 );
                 _save();
                 Navigator.pop(c);
