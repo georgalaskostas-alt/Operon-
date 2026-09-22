@@ -166,6 +166,53 @@ class OperonStrings {
   String get sourcesUsed => pick('SOURCES USED', 'ΠΗΓΕΣ ΠΟΥ ΧΡΗΣΙΜΟΠΟΙΗΘΗΚΑΝ');
   String get shiftQuestion => pick('What should I know this shift?', 'Τι πρέπει να γνωρίζω σε αυτή τη βάρδια;');
   String get overdueActions => pick('Overdue actions', 'Εκπρόθεσμες ενέργειες');
+
+  String get shiftControl => pick('Shift Control', 'Έλεγχος βάρδιας');
+  String get attentionNow => pick('What needs your attention now', 'Τι χρειάζεται την προσοχή σου τώρα');
+  String get open => pick('Open', 'Ανοιχτά');
+  String get unavailable => pick('Unavailable', 'Μη διαθέσιμα');
+  String get needsAttention => pick('Needs attention', 'Χρειάζονται προσοχή');
+  String get watchlist => pick('Watchlist', 'Λίστα παρακολούθησης');
+  String get actions => pick('Actions', 'Ενέργειες');
+  String get handoverShort => pick('Handover', 'Παράδοση');
+  String get recentLog => pick('Recent log', 'Πρόσφατο ημερολόγιο');
+  String get noActiveShift => pick('No active shift', 'Δεν υπάρχει ενεργή βάρδια');
+  String get startOperatorSession => pick('Tap to start an operator session', 'Πάτησε για έναρξη συνεδρίας χειριστή');
+  String startedAt(String time) => pick('Started $time · tap for shift activity', 'Έναρξη $time · πάτησε για δραστηριότητα βάρδιας');
+  String timersDue(int count) => pick('$count timer${count == 1 ? '' : 's'} due', '$count χρονόμετρ${count == 1 ? 'ο έληξε' : 'α έληξαν'}');
+  String get openTimersAck => pick('Open timers and acknowledge the reminder.', 'Άνοιξε τα χρονόμετρα και επιβεβαίωσε την υπενθύμιση.');
+  String get due => pick('due', 'λήξη');
+  String get acknowledged => pick('acknowledged', 'επιβεβαιωμένο');
+  String get needsAcknowledgement => pick('needs acknowledgement', 'χρειάζεται επιβεβαίωση');
+  String get remaining => pick('remaining', 'απομένουν');
+  String get snoozed => pick('snoozed', 'αναβολή');
+  String get dueAck => pick('DUE · ACKNOWLEDGED', 'ΕΛΗΞΕ · ΕΠΙΒΕΒΑΙΩΜΕΝΟ');
+  String get dueNeedsAck => pick('DUE · NEEDS ACK', 'ΕΛΗΞΕ · ΧΡΕΙΑΖΕΤΑΙ ΕΠΙΒΕΒΑΙΩΣΗ');
+
+  String get watchCenter => pick('Watch center', 'Κέντρο παρακολούθησης');
+  String get noActiveWatch => pick('No active watch items', 'Δεν υπάρχουν ενεργά σημεία παρακολούθησης');
+  String get operatorNotes => pick('Operator notes', 'Σημειώσεις χειριστή');
+  String get noNotesYet => pick('No notes yet', 'Δεν υπάρχουν ακόμη σημειώσεις');
+  String get pinUnpin => pick('Pin / unpin', 'Καρφίτσωμα / αφαίρεση');
+  String get resolve => pick('Resolve', 'Επίλυση');
+  String get operatorNote => pick('Operator note', 'Σημείωση χειριστή');
+  String get title => pick('Title', 'Τίτλος');
+  String get equipmentTag => pick('Equipment TAG', 'TAG εξοπλισμού');
+  String get note => pick('Note', 'Σημείωση');
+  String get save => pick('Save', 'Αποθήκευση');
+  String get noProcessCircuits => pick('No process circuits yet', 'Δεν υπάρχουν ακόμη κυκλώματα διεργασίας');
+  String get circuit => pick('Circuit', 'Κύκλωμα');
+  String get linkedTags => pick('linked TAGs', 'συνδεδεμένα TAGs');
+  String get noPidReference => pick('No P&ID reference', 'Δεν υπάρχει αναφορά P&ID');
+  String get newProcessCircuit => pick('New process circuit', 'Νέο κύκλωμα διεργασίας');
+  String get circuitName => pick('Circuit name', 'Όνομα κυκλώματος');
+  String get description => pick('Description', 'Περιγραφή');
+  String get tagFlowOrder => pick('TAG flow order', 'Σειρά ροής TAG');
+  String get approvedPidReference => pick('Approved P&ID reference', 'Εγκεκριμένη αναφορά P&ID');
+  String get sourceOwner => pick('Source / owner', 'Πηγή / υπεύθυνος');
+  String get saveCircuit => pick('Save circuit', 'Αποθήκευση κυκλώματος');
+  String get processCircuitDefault => pick('Process circuit', 'Κύκλωμα διεργασίας');
+  String get approvedReferenceRequired => pick('Approved reference required', 'Απαιτείται εγκεκριμένη αναφορά');
 }
 
 extension OperonLocalization on BuildContext {
