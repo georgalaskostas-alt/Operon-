@@ -27,7 +27,7 @@ class AppStore extends ChangeNotifier {
       logs..clear()..addAll(((s['logs'] as List?)??[]).map((e)=>LogEntry.fromJson(Map<String,dynamic>.from(e))));
       watch..clear()..addAll(((s['watch'] as List?)??[]).map((e)=>WatchItem.fromJson(Map<String,dynamic>.from(e))));
       tasks..clear()..addAll(((s['tasks'] as List?)??[]).map((e)=>OperatorTask.fromJson(Map<String,dynamic>.from(e))));
-      if(s['currentShift']!=null) currentShift=ShiftSession.fromJson(Map<String,dynamic>.from(s['currentShift']));
+      currentShift=s['currentShift']==null?null:ShiftSession.fromJson(Map<String,dynamic>.from(s['currentShift']));
       handovers..clear()..addAll(((s['handovers'] as List?)??[]).map((e)=>ShiftHandover.fromJson(Map<String,dynamic>.from(e))));
       knowledge..clear()..addEntries(((s['knowledge'] as List?)??[]).map((e){final k=EquipmentKnowledge.fromJson(Map<String,dynamic>.from(e));return MapEntry(k.tag,k);}));
       circuits..clear()..addAll(((s['circuits'] as List?)??[]).map((e)=>ProcessCircuit.fromJson(Map<String,dynamic>.from(e))));
@@ -40,6 +40,7 @@ class AppStore extends ChangeNotifier {
   }
   Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList(),'currentShift':currentShift?.toJson(),'handovers':handovers.map((e)=>e.toJson()).toList(),'knowledge':knowledge.values.map((e)=>e.toJson()).toList(),'circuits':circuits.map((e)=>e.toJson()).toList(),'notes':notes.map((e)=>e.toJson()).toList(),'procedureRuns':procedureRuns.map((e)=>e.toJson()).toList(),'shiftHistory':shiftHistory.map((e)=>e.toJson()).toList(),'auditEvents':auditEvents.map((e)=>e.toJson()).toList()});
   void _changed(){notifyListeners();_persist();}
+  String _id()=>DateTime.now().microsecondsSinceEpoch.toString();
   void _audit(String type,String summary,{String? tag,String source='app',String? entityId}){auditEvents.insert(0,AuditEvent(id:DateTime.now().microsecondsSinceEpoch.toString(),type:type,summary:summary,source:source,createdAt:DateTime.now(),equipmentTag:tag,shiftId:currentShift?.id,entityId:entityId));}
 
   final List<Equipment> equipment = [
@@ -71,10 +72,43 @@ class AppStore extends ChangeNotifier {
   void addTask(String title,{String? tag}){final clean=title.trim();if(clean.isEmpty)return;tasks.insert(0,OperatorTask(id:DateTime.now().microsecondsSinceEpoch.toString(),title:clean,equipmentTag:tag,createdShiftId:currentShift?.id));addLog('Action created: $clean',tag:tag);}
   void setTaskState(OperatorTask task,ActionState state){task.state=state;addLog('Action ${task.title} → ${state.name}',tag:task.equipmentTag);}
   void completeTask(OperatorTask task){setTaskState(task,ActionState.completed);}
-  void startShift(String operatorName,ShiftType type){if(currentShift?.active==true)return;final id=DateTime.now().microsecondsSinceEpoch.toString();for(final t in tasks.where((x)=>x.state!=ActionState.completed)){if(t.createdShiftId!=null&&t.createdShiftId!=id&&t.lastCarriedShiftId!=id){t.carriedShifts++;t.lastCarriedShiftId=id;}}currentShift=ShiftSession(id:id,operatorName:operatorName.trim(),type:type,startedAt:DateTime.now(),openingLogIndex:logs.length);_audit('shift.started','${type.name} · ${operatorName.trim()}',entityId:id);addLog('Shift started · ${type.name} · ${operatorName.trim()}',source:'shift');}
-  void endShift(){final s=currentShift;if(s==null||!s.active)return;s.endedAt=DateTime.now();if(!shiftHistory.any((x)=>x.id==s.id))shiftHistory.insert(0,s);_audit('shift.ended','${s.type.name} · ${s.operatorName}',entityId:s.id);addLog('Shift ended · ${s.type.name} · ${s.operatorName}',source:'shift');}
-  void saveHandover(ShiftHandover h){handovers.insert(0,h);addLog('Handover prepared · ${h.outgoingOperator} · ${h.outgoingShift}');}
-  void acceptHandover(ShiftHandover h,String incoming){if(h.accepted)return;h.incomingOperator=incoming.trim();h.acceptedAt=DateTime.now();addLog('Handover accepted · ${h.outgoingOperator} → ${incoming.trim()}');}
+  void startShift(String operatorName,ShiftType type){
+    final clean=operatorName.trim();
+    if(clean.isEmpty||currentShift?.active==true)return;
+    final id=_id(),now=DateTime.now();
+    for(final t in tasks.where((x)=>x.state!=ActionState.completed)){
+      final existedBeforeShift=t.createdAt.isBefore(now);
+      if(existedBeforeShift&&t.lastCarriedShiftId!=id){
+        t.carriedShifts++;
+        t.lastCarriedShiftId=id;
+      }
+    }
+    currentShift=ShiftSession(id:id,operatorName:clean,type:type,startedAt:now,openingLogIndex:logs.length);
+    _audit('shift.started','${type.name} · $clean',source:'shift',entityId:id);
+    addLog('Shift started · ${type.name} · $clean',source:'shift');
+  }
+  void endShift(){
+    final s=currentShift;
+    if(s==null||!s.active)return;
+    s.endedAt=DateTime.now();
+    if(!shiftHistory.any((x)=>x.id==s.id))shiftHistory.insert(0,s);
+    _audit('shift.ended','${s.type.name} · ${s.operatorName}',source:'shift',entityId:s.id);
+    addLog('Shift ended · ${s.type.name} · ${s.operatorName}',source:'shift');
+  }
+  void saveHandover(ShiftHandover h){
+    if(handovers.any((x)=>x.id==h.id))return;
+    handovers.insert(0,h);
+    _audit('handover.prepared','${h.outgoingOperator} · ${h.outgoingShift}',source:'handover',entityId:h.id);
+    addLog('Handover prepared · ${h.outgoingOperator} · ${h.outgoingShift}',source:'handover');
+  }
+  void acceptHandover(ShiftHandover h,String incoming){
+    final clean=incoming.trim();
+    if(h.accepted||clean.isEmpty)return;
+    h.incomingOperator=clean;
+    h.acceptedAt=DateTime.now();
+    _audit('handover.accepted','${h.outgoingOperator} → $clean',source:'handover',entityId:h.id);
+    addLog('Handover accepted · ${h.outgoingOperator} → $clean',source:'handover');
+  }
   EquipmentKnowledge knowledgeFor(String tag)=>knowledge.putIfAbsent(tag,()=>EquipmentKnowledge(tag:tag));
   void saveKnowledge(EquipmentKnowledge item){item.updatedAt=DateTime.now();knowledge[item.tag]=item;addLog('Knowledge updated · ${item.tag}',tag:item.tag);}
   void saveCircuit(ProcessCircuit circuit){circuit.updatedAt=DateTime.now();final i=circuits.indexWhere((e)=>e.id==circuit.id);if(i<0){circuits.add(circuit);}else{circuits[i]=circuit;}addLog('Process circuit updated · ${circuit.name}');}
