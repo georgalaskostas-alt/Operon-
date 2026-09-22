@@ -104,6 +104,68 @@ class OperonStrings {
   String get languageSub => pick('Choose app language', 'Επιλογή γλώσσας εφαρμογής');
   String get english => 'English';
   String get greek => 'Ελληνικά';
+
+  String get statusNotesHistory => pick('Status, notes and history', 'Κατάσταση, σημειώσεις και ιστορικό');
+  String get searchTagEquipment => pick('Search tag or equipment', 'Αναζήτηση TAG ή εξοπλισμού');
+  String get immutableTimeline => pick('Immutable operator timeline', 'Αμετάβλητο χρονολόγιο χειριστή');
+  String get general => pick('General', 'Γενικά');
+  String get newAction => pick('New action', 'Νέα ενέργεια');
+  String get action => pick('Action', 'Ενέργεια');
+  String get equipmentTagOptional => pick('Equipment tag (optional)', 'TAG εξοπλισμού (προαιρετικό)');
+  String get add => pick('Add', 'Προσθήκη');
+  String get shiftHandover => pick('Shift handover', 'Παράδοση βάρδιας');
+  String get waitingAcceptance => pick('HANDOVER WAITING FOR ACCEPTANCE', 'ΠΑΡΑΔΟΣΗ ΣΕ ΑΝΑΜΟΝΗ ΑΠΟΔΟΧΗΣ');
+  String get incomingOperator => pick('Incoming operator', 'Παραλαμβάνων χειριστής');
+  String get acceptHandover => pick('Accept handover', 'Αποδοχή παράδοσης');
+  String get openActions => pick('Open actions', 'Ανοιχτές ενέργειες');
+  String get unavailableMaintenance => pick('Equipment unavailable / maintenance', 'Μη διαθέσιμος εξοπλισμός / συντήρηση');
+  String get timerReminders => pick('Timers / reminders', 'Χρονόμετρα / υπενθυμίσεις');
+  String get noActiveTimers => pick('No active timers', 'Δεν υπάρχουν ενεργά χρονόμετρα');
+  String get handoverNotes => pick('Handover notes', 'Σημειώσεις παράδοσης');
+  String get prepareHandover => pick('Prepare handover', 'Προετοιμασία παράδοσης');
+  String get handoverHistory => pick('Handover history', 'Ιστορικό παραδόσεων');
+  String get pending => pick('Pending', 'Σε αναμονή');
+  String get accepted => pick('Accepted', 'Αποδεκτή');
+  String get awaitingAcceptance => pick('Awaiting acceptance', 'Αναμονή αποδοχής');
+  String get timersReminders => pick('Timers & reminders', 'Χρονόμετρα & υπενθυμίσεις');
+  String get completed => pick('COMPLETED', 'ΟΛΟΚΛΗΡΩΜΕΝΑ');
+  String get acknowledge => pick('Acknowledge', 'Επιβεβαίωση');
+  String get complete => pick('Complete', 'Ολοκλήρωση');
+  String get newOperatorTimer => pick('New operator timer', 'Νέο χρονόμετρο χειριστή');
+  String get reminder => pick('Reminder', 'Υπενθύμιση');
+  String get startTimer => pick('Start timer', 'Έναρξη χρονομέτρου');
+  String get check => pick('Check', 'Έλεγχος');
+  String get proceduresChecklists => pick('Procedures & checklists', 'Διαδικασίες & checklists');
+  String get procedureSafety => pick(
+    'Use only site-controlled procedures. OPERON records operator progress; it does not replace the approved procedure, DCS/SIS, PTW or LOTO.',
+    'Χρησιμοποίησε μόνο ελεγχόμενες διαδικασίες της εγκατάστασης. Το OPERON καταγράφει την πρόοδο του χειριστή· δεν αντικαθιστά την εγκεκριμένη διαδικασία, DCS/SIS, PTW ή LOTO.',
+  );
+  String get runHistory => pick('RUN HISTORY', 'ΙΣΤΟΡΙΚΟ ΕΚΤΕΛΕΣΕΩΝ');
+  String get scanHandwrittenTitle => pick('Scan handwritten notes', 'Σάρωση χειρόγραφων σημειώσεων');
+  String get ocrReview => pick('Photo → OCR → operator review', 'Φωτογραφία → OCR → έλεγχος χειριστή');
+  String get ocrSafety => pick(
+    'Nothing is committed automatically. Review every extracted item before saving.',
+    'Τίποτα δεν καταχωρείται αυτόματα. Έλεγξε κάθε στοιχείο που εξήχθη πριν την αποθήκευση.',
+  );
+  String get reading => pick('Reading…', 'Ανάγνωση…');
+  String get photographNote => pick('Photograph note', 'Φωτογράφιση σημείωσης');
+  String get recognizedText => pick('Recognized text', 'Αναγνωρισμένο κείμενο');
+  String get proposedEntries => pick('Proposed entries', 'Προτεινόμενες καταχωρήσεις');
+  String get noMatchedTag => pick('No matched tag', 'Δεν βρέθηκε TAG');
+  String get checkTag => pick('CHECK TAG', 'ΕΛΕΓΧΟΣ TAG');
+  String get confirmSelected => pick('Confirm selected entries', 'Επιβεβαίωση επιλεγμένων καταχωρήσεων');
+  String get scannedWatchItem => pick('Scanned watch item', 'Σαρωμένο σημείο παρακολούθησης');
+  String get assistant => 'OPERON Assistant';
+  String get groundedPrivate => pick('Grounded · private-first', 'Τεκμηριωμένο · private-first');
+  String get assistantSafety => pick(
+    'Answers are assembled only from recorded OPERON data and verified knowledge. Local LLM/RAG comes later.',
+    'Οι απαντήσεις συντίθενται μόνο από καταγεγραμμένα δεδομένα OPERON και επαληθευμένη γνώση. Το τοπικό LLM/RAG θα προστεθεί αργότερα.',
+  );
+  String get askHint => pick('Ask about a TAG or this shift', 'Ρώτησε για ένα TAG ή για αυτή τη βάρδια');
+  String get askOperon => pick('Ask OPERON', 'Ρώτησε το OPERON');
+  String get sourcesUsed => pick('SOURCES USED', 'ΠΗΓΕΣ ΠΟΥ ΧΡΗΣΙΜΟΠΟΙΗΘΗΚΑΝ');
+  String get shiftQuestion => pick('What should I know this shift?', 'Τι πρέπει να γνωρίζω σε αυτή τη βάρδια;');
+  String get overdueActions => pick('Overdue actions', 'Εκπρόθεσμες ενέργειες');
 }
 
 extension OperonLocalization on BuildContext {
