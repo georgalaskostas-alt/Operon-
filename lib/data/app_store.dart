@@ -164,9 +164,64 @@ class AppStore extends ChangeNotifier {
     _audit('watch.resolved',w.title,tag:w.equipmentTag,source:'watch',entityId:w.id);
     addLog('Watch item resolved · ${w.title}',tag:w.equipmentTag,source:'watch');
   }
-  ProcedureRun startProcedure(ControlledProcedure p){final r=ProcedureRun(id:DateTime.now().microsecondsSinceEpoch.toString(),procedureId:p.id,procedureTitle:p.title,version:p.version,source:p.source,operatorName:currentShift?.operatorName??'Operator',startedAt:DateTime.now(),records:p.steps.map((e)=>StepRecord(stepId:e.id)).toList());procedureRuns.insert(0,r);addLog('Procedure started · ${p.title} · v${p.version}');return r;}
-  void setProcedureStep(ProcedureRun r,String stepId,bool confirmed,{String note=''}){final x=r.records.firstWhere((e)=>e.stepId==stepId);x.confirmed=confirmed;x.confirmedAt=confirmed?DateTime.now():null;x.note=note;addLog('Procedure ${r.procedureTitle} · step $stepId → ${confirmed?'confirmed':'reopened'}');}
-  void setProcedureRunState(ProcedureRun r,ProcedureRunState state){r.state=state;if(state==ProcedureRunState.completed)r.completedAt=DateTime.now();addLog('Procedure ${r.procedureTitle} → ${state.name}');}
+  ProcedureRun startProcedure(ControlledProcedure p){
+    final r=ProcedureRun(
+      id:_id(),
+      procedureId:p.id,
+      procedureTitle:p.title,
+      version:p.version,
+      source:p.source,
+      operatorName:currentShift?.operatorName??'Operator',
+      startedAt:DateTime.now(),
+      records:p.steps.map((e)=>StepRecord(
+        stepId:e.id,
+        stepTitle:e.title,
+        safetyCritical:e.safetyCritical,
+      )).toList(),
+    );
+    procedureRuns.insert(0,r);
+    _audit('procedure.started','${p.title} · v${p.version}',source:'procedure',entityId:r.id);
+    addLog('Procedure started · ${p.title} · v${p.version}',source:'procedure');
+    return r;
+  }
+
+  bool setProcedureStep(ProcedureRun r,String stepId,bool confirmed,{String? note}){
+    if(r.state!=ProcedureRunState.active)return false;
+    final matches=r.records.where((e)=>e.stepId==stepId);
+    if(matches.isEmpty)return false;
+    final x=matches.first;
+    if(x.confirmed==confirmed && note==null)return true;
+    x.confirmed=confirmed;
+    x.confirmedAt=confirmed?DateTime.now():null;
+    if(note!=null)x.note=note.trim();
+    _audit(
+      confirmed?'procedure.step_confirmed':'procedure.step_reopened',
+      '${r.procedureTitle} · ${x.stepTitle.isEmpty?stepId:x.stepTitle}',
+      source:'procedure',
+      entityId:r.id,
+    );
+    addLog(
+      'Procedure ${r.procedureTitle} · step $stepId → ${confirmed?'confirmed':'reopened'}',
+      source:'procedure',
+    );
+    return true;
+  }
+
+  bool setProcedureRunState(ProcedureRun r,ProcedureRunState state){
+    if(r.state==state)return true;
+    if(r.state==ProcedureRunState.completed||r.state==ProcedureRunState.cancelled)return false;
+    if(state==ProcedureRunState.completed && !r.allStepsConfirmed)return false;
+    if(state==ProcedureRunState.active && r.state!=ProcedureRunState.paused)return false;
+    if(state==ProcedureRunState.paused && r.state!=ProcedureRunState.active)return false;
+    if(state==ProcedureRunState.cancelled &&
+        r.state!=ProcedureRunState.active &&
+        r.state!=ProcedureRunState.paused)return false;
+    r.state=state;
+    r.completedAt=state==ProcedureRunState.completed?DateTime.now():null;
+    _audit('procedure.state_changed','${r.procedureTitle} → ${state.name}',source:'procedure',entityId:r.id);
+    addLog('Procedure ${r.procedureTitle} → ${state.name}',source:'procedure');
+    return true;
+  }
   ShiftHandover? get pendingHandover {for(final h in handovers){if(!h.accepted)return h;}return null;}
   List<OperatorTask> get carriedTasks=>tasks.where((e)=>e.state!=ActionState.completed&&e.carriedShifts>0).toList()..sort((a,b)=>b.carriedShifts.compareTo(a.carriedShifts));
   List<OperatorTask> get overdueTasks=>tasks.where((e)=>e.overdue).toList();
