@@ -209,15 +209,23 @@ class AppStore extends ChangeNotifier {
 
   bool setProcedureRunState(ProcedureRun r,ProcedureRunState state){
     if(r.state==state)return true;
-    if(r.state==ProcedureRunState.completed||r.state==ProcedureRunState.cancelled)return false;
+    if(r.state==ProcedureRunState.completed||r.state==ProcedureRunState.cancelled){
+      return false;
+    }
     if(state==ProcedureRunState.completed && !r.allStepsConfirmed){
       return false;
     }
-    if(state==ProcedureRunState.active && r.state!=ProcedureRunState.paused)return false;
-    if(state==ProcedureRunState.paused && r.state!=ProcedureRunState.active)return false;
+    if(state==ProcedureRunState.active && r.state!=ProcedureRunState.paused){
+      return false;
+    }
+    if(state==ProcedureRunState.paused && r.state!=ProcedureRunState.active){
+      return false;
+    }
     if(state==ProcedureRunState.cancelled &&
         r.state!=ProcedureRunState.active &&
-        r.state!=ProcedureRunState.paused)return false;
+        r.state!=ProcedureRunState.paused){
+      return false;
+    }
     r.state=state;
     r.completedAt=state==ProcedureRunState.completed?DateTime.now():null;
     _audit('procedure.state_changed','${r.procedureTitle} → ${state.name}',source:'procedure',entityId:r.id);
