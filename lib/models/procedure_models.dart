@@ -1,0 +1,130 @@
+enum ProcedureRunState { active, paused, completed, cancelled }
+
+class ProcedureStep {
+  final String id, title;
+  final bool safetyCritical;
+  const ProcedureStep({
+    required this.id,
+    required this.title,
+    this.safetyCritical = false,
+  });
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'safetyCritical': safetyCritical,
+      };
+  factory ProcedureStep.fromJson(Map<String, dynamic> j) => ProcedureStep(
+        id: j['id'] ?? '',
+        title: j['title'] ?? '',
+        safetyCritical: j['safetyCritical'] ?? false,
+      );
+}
+
+class ControlledProcedure {
+  final String id, title, category, source, version;
+  final List<String> equipmentTags;
+  final List<ProcedureStep> steps;
+  const ControlledProcedure({
+    required this.id,
+    required this.title,
+    required this.category,
+    required this.source,
+    required this.version,
+    this.equipmentTags = const [],
+    this.steps = const [],
+  });
+}
+
+class StepRecord {
+  final String stepId;
+  final String stepTitle;
+  final bool safetyCritical;
+  bool confirmed;
+  DateTime? confirmedAt;
+  String note;
+  StepRecord({
+    required this.stepId,
+    this.stepTitle = '',
+    this.safetyCritical = false,
+    this.confirmed = false,
+    this.confirmedAt,
+    this.note = '',
+  });
+  Map<String, dynamic> toJson() => {
+        'stepId': stepId,
+        'stepTitle': stepTitle,
+        'safetyCritical': safetyCritical,
+        'confirmed': confirmed,
+        'confirmedAt': confirmedAt?.toIso8601String(),
+        'note': note,
+      };
+  factory StepRecord.fromJson(Map<String, dynamic> j) => StepRecord(
+        stepId: j['stepId'] ?? '',
+        stepTitle: j['stepTitle'] ?? '',
+        safetyCritical: j['safetyCritical'] ?? false,
+        confirmed: j['confirmed'] ?? false,
+        confirmedAt: j['confirmedAt'] == null
+            ? null
+            : DateTime.tryParse(j['confirmedAt']),
+        note: j['note'] ?? '',
+      );
+}
+
+class ProcedureRun {
+  final String id, procedureId, procedureTitle, version, source, operatorName;
+  final DateTime startedAt;
+  final List<StepRecord> records;
+  ProcedureRunState state;
+  DateTime? completedAt;
+  ProcedureRun({
+    required this.id,
+    required this.procedureId,
+    required this.procedureTitle,
+    required this.version,
+    required this.source,
+    required this.operatorName,
+    required this.startedAt,
+    required this.records,
+    this.state = ProcedureRunState.active,
+    this.completedAt,
+  });
+
+  int get completedSteps => records.where((e) => e.confirmed).length;
+  bool get allStepsConfirmed =>
+      records.isNotEmpty && records.every((e) => e.confirmed);
+  bool get mutable =>
+      state == ProcedureRunState.active || state == ProcedureRunState.paused;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'procedureId': procedureId,
+        'procedureTitle': procedureTitle,
+        'version': version,
+        'source': source,
+        'operatorName': operatorName,
+        'startedAt': startedAt.toIso8601String(),
+        'records': records.map((e) => e.toJson()).toList(),
+        'state': state.name,
+        'completedAt': completedAt?.toIso8601String(),
+      };
+
+  factory ProcedureRun.fromJson(Map<String, dynamic> j) => ProcedureRun(
+        id: j['id'] ?? '',
+        procedureId: j['procedureId'] ?? '',
+        procedureTitle: j['procedureTitle'] ?? '',
+        version: j['version'] ?? '',
+        source: j['source'] ?? '',
+        operatorName: j['operatorName'] ?? '',
+        startedAt: DateTime.tryParse(j['startedAt'] ?? '') ?? DateTime.now(),
+        records: ((j['records'] as List?) ?? [])
+            .map((e) => StepRecord.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
+        state: ProcedureRunState.values.firstWhere(
+          (e) => e.name == j['state'],
+          orElse: () => ProcedureRunState.active,
+        ),
+        completedAt: j['completedAt'] == null
+            ? null
+            : DateTime.tryParse(j['completedAt']),
+      );
+}
