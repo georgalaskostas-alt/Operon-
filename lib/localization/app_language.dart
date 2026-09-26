@@ -216,6 +216,7 @@ class OperonStrings {
 
   String get shiftSession => pick('Shift session', 'Συνεδρία βάρδιας');
   String get startShift => pick('Start shift', 'Έναρξη βάρδιας');
+  String get started => pick('Started', 'Έναρξη');
   String get carriedInfo => pick('Open work is automatically marked as carried into the new shift.', 'Οι ανοιχτές εργασίες επισημαίνονται αυτόματα ως μεταφερόμενες στη νέα βάρδια.');
   String get operatorName => pick('Operator name', 'Όνομα χειριστή');
   String get shift => pick('Shift', 'Βάρδια');
