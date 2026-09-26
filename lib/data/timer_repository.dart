@@ -1,24 +1,18 @@
 import 'dart:convert';
-import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
+import 'local_repository.dart';
 import '../models/operator_timer.dart';
 
 class TimerRepository {
   static const key = 'operon.timers.v1';
   static const _migrationKey = 'operon.timers.sqlite.migrated';
-  static const _dbName = 'operon.db';
-  Database? _db;
+  final LocalRepository _repository;
 
-  Future<Database> _database() async {
-    if (_db != null) return _db!;
-    final root = await getDatabasesPath();
-    _db = await openDatabase(p.join(root, _dbName));
-    await _db!.execute(
-      'CREATE TABLE IF NOT EXISTS operator_timers (id INTEGER PRIMARY KEY, json TEXT NOT NULL, updated_at TEXT NOT NULL)',
-    );
-    return _db!;
-  }
+  TimerRepository({LocalRepository? repository})
+      : _repository = repository ?? LocalRepository();
+
+  Future<Database> _database() => _repository.database();
 
   Future<List<OperatorTimer>> load() async {
     final db = await _database();
