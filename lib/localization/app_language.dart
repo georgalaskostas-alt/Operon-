@@ -248,6 +248,44 @@ class OperonStrings {
   );
   String get cancel => pick('Cancel', 'Ακύρωση');
   String get iConfirm => pick('I confirm', 'Επιβεβαιώνω');
+  String get procedurePausedLocked => pick(
+    'Procedure paused · step confirmation is locked',
+    'Η διαδικασία είναι σε παύση · η επιβεβαίωση βημάτων είναι κλειδωμένη',
+  );
+  String get cancelRun => pick('Cancel run', 'Ακύρωση εκτέλεσης');
+  String get cancelProcedureRun => pick(
+    'Cancel procedure run?',
+    'Ακύρωση εκτέλεσης διαδικασίας;',
+  );
+  String get cancelledRunHistory => pick(
+    'The run will remain in history and cannot be resumed.',
+    'Η εκτέλεση θα παραμείνει στο ιστορικό και δεν θα μπορεί να συνεχιστεί.',
+  );
+  String get keepRun => pick('Keep run', 'Διατήρηση εκτέλεσης');
+  String get stepNote => pick('Step note', 'Σημείωση βήματος');
+  String get addStepNote => pick('Add note', 'Προσθήκη σημείωσης');
+  String get editStepNote => pick('Edit note', 'Επεξεργασία σημείωσης');
+  String get saveNote => pick('Save note', 'Αποθήκευση σημείωσης');
+  String get readOnlyHistory => pick('READ-ONLY HISTORY', 'ΙΣΤΟΡΙΚΟ ΜΟΝΟ ΓΙΑ ΑΝΑΓΝΩΣΗ');
+  String get activeState => pick('Active', 'Ενεργή');
+  String get pausedState => pick('Paused', 'Σε παύση');
+  String get completedState => pick('Completed', 'Ολοκληρωμένη');
+  String get cancelledState => pick('Cancelled', 'Ακυρωμένη');
+  String procedureState(String state) {
+    switch (state) {
+      case 'active':
+        return activeState;
+      case 'paused':
+        return pausedState;
+      case 'completed':
+        return completedState;
+      case 'cancelled':
+        return cancelledState;
+      default:
+        return state;
+    }
+  }
+
 
   String knowledgeTitle(String tag) => pick('$tag Knowledge', '$tag Γνώση');
   String get controlledKnowledge => pick('Controlled operational knowledge', 'Ελεγχόμενη λειτουργική γνώση');
