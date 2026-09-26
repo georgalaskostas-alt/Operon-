@@ -7,7 +7,7 @@ class LocalRepository {
   static const _legacyKey = 'operon.snapshot.v1';
   static const _migrationKey = 'operon.sqlite.migrated';
   static const _dbName = 'operon.db';
-  static const _schemaVersion = 2;
+  static const _schemaVersion = 3;
   Database? _db;
 
   Future<Database> _database() async {
@@ -22,9 +22,11 @@ class LocalRepository {
       onCreate: (db, version) async {
         await _createV1(db);
         await _createV2(db);
+        await _createV3(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) await _createV2(db);
+        if (oldVersion < 3) await _createV3(db);
       },
     );
     return _db!;
@@ -50,6 +52,14 @@ class LocalRepository {
       'CREATE TABLE IF NOT EXISTS repository_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
     );
   }
+
+  Future<void> _createV3(DatabaseExecutor db) async {
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS operator_timers (id INTEGER PRIMARY KEY, json TEXT NOT NULL, updated_at TEXT NOT NULL)',
+    );
+  }
+
+  Future<Database> database() => _database();
 
   Future<Map<String, dynamic>?> load() async {
     final db = await _database();
