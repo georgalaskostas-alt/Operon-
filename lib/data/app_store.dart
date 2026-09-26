@@ -207,6 +207,23 @@ class AppStore extends ChangeNotifier {
     return true;
   }
 
+  bool setProcedureStepNote(ProcedureRun r,String stepId,String note){
+    if(r.state!=ProcedureRunState.active)return false;
+    final matches=r.records.where((e)=>e.stepId==stepId);
+    if(matches.isEmpty)return false;
+    final x=matches.first,clean=note.trim();
+    if(x.note==clean)return true;
+    x.note=clean;
+    _audit(
+      'procedure.step_note_changed',
+      '${r.procedureTitle} · ${x.stepTitle.isEmpty?stepId:x.stepTitle}',
+      source:'procedure',
+      entityId:r.id,
+    );
+    _changed();
+    return true;
+  }
+
   bool setProcedureRunState(ProcedureRun r,ProcedureRunState state){
     if(r.state==state)return true;
     if(r.state==ProcedureRunState.completed||r.state==ProcedureRunState.cancelled){
