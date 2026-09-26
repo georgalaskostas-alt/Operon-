@@ -35,7 +35,7 @@ class _S extends State<ProcedureRunScreen> {
           final record = r.records.firstWhere((x) => x.stepId == step.id);
           return Card(child: CheckboxListTile(
             value: record.confirmed,
-            onChanged: r.state == ProcedureRunState.completed ? null : (v) {
+            onChanged: r.state != ProcedureRunState.active ? null : (v) {
               if (step.safetyCritical && v == true) {
                 _confirmCritical(step);
               } else {
@@ -53,8 +53,16 @@ class _S extends State<ProcedureRunScreen> {
               color: step.safetyCritical ? Colors.orange : OperonTheme.teal),
           ));
         }),
-        if (r.state != ProcedureRunState.completed)
-          Wrap(spacing: 8, children: [
+        if (r.state == ProcedureRunState.paused)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Text(
+              'Procedure paused · step confirmation is locked',
+              style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w700),
+            ),
+          ),
+        if (r.mutable)
+          Wrap(spacing: 8, runSpacing: 8, children: [
             OutlinedButton.icon(
               onPressed: () {
                 widget.store.setProcedureRunState(r, r.state == ProcedureRunState.paused ? ProcedureRunState.active : ProcedureRunState.paused);
@@ -64,14 +72,55 @@ class _S extends State<ProcedureRunScreen> {
               label: Text(r.state == ProcedureRunState.paused ? t.resume : t.pause),
             ),
             FilledButton.icon(
-              onPressed: r.completedSteps == p.steps.length ? () {
-                widget.store.setProcedureRunState(r, ProcedureRunState.completed);
-                setState(() {});
-              } : null,
-              icon: const Icon(Icons.task_alt), label: Text(t.completeRun),
-            )
+              onPressed: r.state == ProcedureRunState.active &&
+                      r.allStepsConfirmed
+                  ? () {
+                      widget.store.setProcedureRunState(
+                        r,
+                        ProcedureRunState.completed,
+                      );
+                      setState(() {});
+                    }
+                  : null,
+              icon: const Icon(Icons.task_alt),
+              label: Text(t.completeRun),
+            ),
+            TextButton.icon(
+              onPressed: () => _cancelRun(),
+              icon: const Icon(Icons.cancel_outlined),
+              label: const Text('Cancel run'),
+            ),
           ])
       ]),
+    );
+  }
+
+  void _cancelRun() {
+    showDialog(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Cancel procedure run?'),
+        content: const Text(
+          'The run will remain in history and cannot be resumed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c),
+            child: const Text('Keep run'),
+          ),
+          FilledButton(
+            onPressed: () {
+              widget.store.setProcedureRunState(
+                widget.run,
+                ProcedureRunState.cancelled,
+              );
+              Navigator.pop(c);
+              setState(() {});
+            },
+            child: const Text('Cancel run'),
+          ),
+        ],
+      ),
     );
   }
 
