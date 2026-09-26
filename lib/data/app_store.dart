@@ -39,7 +39,13 @@ class AppStore extends ChangeNotifier {
     hydrated=true; notifyListeners();
   }
   Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList(),'currentShift':currentShift?.toJson(),'handovers':handovers.map((e)=>e.toJson()).toList(),'knowledge':knowledge.values.map((e)=>e.toJson()).toList(),'circuits':circuits.map((e)=>e.toJson()).toList(),'notes':notes.map((e)=>e.toJson()).toList(),'procedureRuns':procedureRuns.map((e)=>e.toJson()).toList(),'shiftHistory':shiftHistory.map((e)=>e.toJson()).toList(),'auditEvents':auditEvents.map((e)=>e.toJson()).toList()});
-  void _changed(){notifyListeners();_persist();}
+  Future<void> _saveQueue=Future<void>.value();
+  void _changed(){
+    notifyListeners();
+    _saveQueue=_saveQueue
+        .catchError((_) {})
+        .then((_)=>_persist());
+  }
   String _id()=>DateTime.now().microsecondsSinceEpoch.toString();
   void _audit(String type,String summary,{String? tag,String source='app',String? entityId}){auditEvents.insert(0,AuditEvent(id:DateTime.now().microsecondsSinceEpoch.toString(),type:type,summary:summary,source:source,createdAt:DateTime.now(),equipmentTag:tag,shiftId:currentShift?.id,entityId:entityId));}
 
