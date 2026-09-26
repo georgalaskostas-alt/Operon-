@@ -27,13 +27,16 @@ class _S extends State<ProcedureRunScreen> {
         LinearProgressIndicator(value: p.steps.isEmpty ? 0 : r.completedSteps / p.steps.length),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Text('${r.completedSteps}/${p.steps.length} ${t.confirmed} · ${r.state.name}',
+          child: Text('${r.completedSteps}/${p.steps.length} ${t.confirmed} · ${t.procedureState(r.state.name)}',
             style: const TextStyle(color: OperonTheme.muted)),
         ),
         ...p.steps.asMap().entries.map((e) {
           final step = e.value;
           final record = r.records.firstWhere((x) => x.stepId == step.id);
-          return Card(child: CheckboxListTile(
+          return Card(
+            child: Column(
+              children: [
+                CheckboxListTile(
             value: record.confirmed,
             onChanged: r.state != ProcedureRunState.active ? null : (v) {
               if (step.safetyCritical && v == true) {
@@ -51,14 +54,40 @@ class _S extends State<ProcedureRunScreen> {
                 : '${t.confirmedAt} ${TimeOfDay.fromDateTime(record.confirmedAt!).format(c)}'),
             secondary: Icon(step.safetyCritical ? Icons.shield_outlined : Icons.checklist,
               color: step.safetyCritical ? Colors.orange : OperonTheme.teal),
-          ));
+          ),
+          if (record.note.isNotEmpty)
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.notes, size: 18),
+              title: Text(record.note),
+            ),
+          if (r.state == ProcedureRunState.active)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => _editStepNote(record),
+                icon: const Icon(Icons.edit_note),
+                label: Text(record.note.isEmpty ? t.addStepNote : t.editStepNote),
+              ),
+            ),
+              ],
+            ),
+          );
         }),
         if (r.state == ProcedureRunState.paused)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 10),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
             child: Text(
-              'Procedure paused · step confirmation is locked',
-              style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w700),
+              t.procedurePausedLocked,
+              style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w700),
+            ),
+          ),
+        if (!r.mutable)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              t.readOnlyHistory,
+              style: const TextStyle(color: OperonTheme.muted, fontWeight: FontWeight.w800),
             ),
           ),
         if (r.mutable)
@@ -88,10 +117,46 @@ class _S extends State<ProcedureRunScreen> {
             TextButton.icon(
               onPressed: () => _cancelRun(),
               icon: const Icon(Icons.cancel_outlined),
-              label: const Text('Cancel run'),
+              label: Text(t.cancelRun),
             ),
           ])
       ]),
+    );
+  }
+
+  void _editStepNote(StepRecord record) {
+    final controller = TextEditingController(text: record.note);
+    final t = context.tr;
+    showDialog(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(t.stepNote),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          minLines: 2,
+          maxLines: 5,
+          decoration: InputDecoration(hintText: t.stepNote),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c),
+            child: Text(t.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              widget.store.setProcedureStepNote(
+                widget.run,
+                record.stepId,
+                controller.text,
+              );
+              Navigator.pop(c);
+              setState(() {});
+            },
+            child: Text(t.saveNote),
+          ),
+        ],
+      ),
     );
   }
 
@@ -99,14 +164,12 @@ class _S extends State<ProcedureRunScreen> {
     showDialog(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Cancel procedure run?'),
-        content: const Text(
-          'The run will remain in history and cannot be resumed.',
-        ),
+        title: Text(context.tr.cancelProcedureRun),
+        content: Text(context.tr.cancelledRunHistory),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c),
-            child: const Text('Keep run'),
+            child: Text(context.tr.keepRun),
           ),
           FilledButton(
             onPressed: () {
@@ -117,7 +180,7 @@ class _S extends State<ProcedureRunScreen> {
               Navigator.pop(c);
               setState(() {});
             },
-            child: const Text('Cancel run'),
+            child: Text(context.tr.cancelRun),
           ),
         ],
       ),
