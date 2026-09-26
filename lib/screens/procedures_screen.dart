@@ -52,6 +52,7 @@ class _S extends State<ProceduresScreen> {
             ),
             ...widget.store.procedureRuns.take(12).map(
                   (r) => ListTile(
+                    onTap: () => _openHistory(r),
                     leading: Icon(
                       r.state == ProcedureRunState.completed
                           ? Icons.check_circle
@@ -61,14 +62,45 @@ class _S extends State<ProceduresScreen> {
                           : Colors.orange,
                     ),
                     title: Text(r.procedureTitle),
-                    subtitle:
-                        Text('v${r.version} · ${r.operatorName} · ${r.state.name}'),
+                    subtitle: Text(
+                      'v${r.version} · ${r.operatorName} · ${t.procedureState(r.state.name)}',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
                   ),
                 )
           ]
         ],
       ),
     );
+  }
+
+  void _openHistory(ProcedureRun r) {
+    final p = widget.store.controlledProcedures.firstWhere(
+      (x) => x.id == r.procedureId,
+      orElse: () => ControlledProcedure(
+        id: r.procedureId,
+        title: r.procedureTitle,
+        category: '',
+        source: r.source,
+        version: r.version,
+        steps: r.records
+            .map(
+              (x) => ProcedureStep(
+                id: x.stepId,
+                title: x.stepTitle.isEmpty ? x.stepId : x.stepTitle,
+                safetyCritical: x.safetyCritical,
+              ),
+            )
+            .toList(),
+      ),
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            ProcedureRunScreen(store: widget.store, procedure: p, run: r),
+      ),
+    ).then((_) => setState(() {}));
   }
 
   void _open(ControlledProcedure p) {
