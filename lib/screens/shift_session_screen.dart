@@ -79,7 +79,7 @@ class _S extends State<ShiftSessionScreen> {
       Text('${s.type.name.toUpperCase()} SHIFT', style: const TextStyle(color: OperonTheme.teal, fontWeight: FontWeight.w800)),
       Text(s.operatorName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
       const SizedBox(height: 6),
-      Text('${t.confirmedAt} ${hhmm(s.startedAt)} · ${widget.store.carriedTasks.length} ${t.carried} · ${widget.store.overdueTasks.length} ${t.overdue.toLowerCase()}',
+      Text('${t.started} ${hhmm(s.startedAt)} · ${widget.store.carriedTasks.length} ${t.carried} · ${widget.store.overdueTasks.length} ${t.overdue.toLowerCase()}',
         style: const TextStyle(color: OperonTheme.muted)),
     ])),
   );
