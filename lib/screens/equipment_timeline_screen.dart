@@ -4,6 +4,7 @@ import '../data/app_store.dart';
 import '../localization/app_language.dart';
 import '../models/models.dart';
 import '../theme/operon_theme.dart';
+import 'scan_history_screen.dart';
 
 enum _TimelineKind { state, log, action, watch, note, scan, audit }
 
@@ -54,7 +55,22 @@ class _EquipmentTimelineScreenState extends State<EquipmentTimelineScreen> {
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: events.length,
-                    itemBuilder: (_, i) => _TimelineCard(event: events[i]),
+                    itemBuilder: (_, i) => _TimelineCard(
+                      event: events[i],
+                      onTap: events[i].scanId == null
+                          ? null
+                          : () {
+                              final scan = widget.store.scanRecords.firstWhere(
+                                (s) => s.id == events[i].scanId,
+                              );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ScanHistoryDetailScreen(scan: scan),
+                                ),
+                              );
+                            },
+                    ),
                   ),
           ),
         ],
@@ -136,6 +152,7 @@ class _EquipmentTimelineScreenState extends State<EquipmentTimelineScreen> {
           detail: entry.text,
           source: 'scan ${scan.id}',
           icon: Icons.document_scanner,
+          scanId: scan.id,
         ));
       }
     }
@@ -168,6 +185,7 @@ class _EquipmentEvent {
   final _TimelineKind kind;
   final String title, detail, source;
   final IconData icon;
+  final String? scanId;
   const _EquipmentEvent({
     required this.at,
     required this.kind,
@@ -175,16 +193,19 @@ class _EquipmentEvent {
     required this.detail,
     required this.source,
     required this.icon,
+    this.scanId,
   });
 }
 
 class _TimelineCard extends StatelessWidget {
   final _EquipmentEvent event;
-  const _TimelineCard({required this.event});
+  final VoidCallback? onTap;
+  const _TimelineCard({required this.event, this.onTap});
 
   @override
   Widget build(BuildContext context) => Card(
         child: ListTile(
+          onTap: onTap,
           leading: Icon(event.icon, color: OperonTheme.teal),
           title: Text(
             event.title,
@@ -194,6 +215,7 @@ class _TimelineCard extends StatelessWidget {
             '${event.detail}\n${_stamp(event.at)} · ${event.source}',
           ),
           isThreeLine: true,
+          trailing: onTap == null ? null : const Icon(Icons.chevron_right),
         ),
       );
 }
