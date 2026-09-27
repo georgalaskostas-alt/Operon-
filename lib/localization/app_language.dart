@@ -362,6 +362,14 @@ class OperonStrings {
   String get equipmentTimeline => pick('Equipment timeline', 'Χρονολόγιο εξοπλισμού');
   String get allRecordedActivity => pick('All recorded activity', 'Όλη η καταγεγραμμένη δραστηριότητα');
   String get noEquipmentActivity => pick('No recorded activity for this equipment', 'Δεν υπάρχει καταγεγραμμένη δραστηριότητα για αυτόν τον εξοπλισμό');
+  String get timelineAll => pick('All', 'Όλα');
+  String get timelineStates => pick('States', 'Καταστάσεις');
+  String get timelineLogs => pick('Logs', 'Ημερολόγιο');
+  String get timelineActions => pick('Actions', 'Ενέργειες');
+  String get timelineWatch => pick('Watch', 'Παρακολούθηση');
+  String get timelineNotes => pick('Notes', 'Σημειώσεις');
+  String get timelineScans => pick('Scans', 'Σαρώσεις');
+  String get scanEvent => pick('OCR scan', 'Σάρωση OCR');
   String get stateChange => pick('State change', 'Αλλαγή κατάστασης');
   String get logEvent => pick('Log entry', 'Καταχώρηση ημερολογίου');
   String get actionEvent => pick('Action', 'Ενέργεια');
