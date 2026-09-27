@@ -7,6 +7,7 @@ class ShiftHandover {
   final String notes;
   String? incomingOperator;
   DateTime? acceptedAt;
+  String? acceptanceStatement;
 
   ShiftHandover({
     required this.id,
@@ -23,6 +24,7 @@ class ShiftHandover {
     this.notes = '',
     this.incomingOperator,
     this.acceptedAt,
+    this.acceptanceStatement,
   });
 
   bool get accepted => acceptedAt != null;
@@ -42,6 +44,7 @@ class ShiftHandover {
         'notes': notes,
         'incomingOperator': incomingOperator,
         'acceptedAt': acceptedAt?.toIso8601String(),
+        'acceptanceStatement': acceptanceStatement,
       };
 
   factory ShiftHandover.fromJson(Map<String, dynamic> j) => ShiftHandover(
@@ -60,5 +63,6 @@ class ShiftHandover {
         incomingOperator: j['incomingOperator'],
         acceptedAt:
             j['acceptedAt'] == null ? null : DateTime.tryParse(j['acceptedAt']),
+        acceptanceStatement: j['acceptanceStatement'],
       );
 }
