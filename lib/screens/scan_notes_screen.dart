@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/app_store.dart';
 import '../localization/app_language.dart';
+import '../models/scan_record.dart';
 import '../services/note_ocr_service.dart';
 import '../services/note_interpreter.dart';
 import '../theme/operon_theme.dart';
@@ -17,6 +18,8 @@ class _S extends State<ScanNotesScreen> {
   String raw = '';
   List<ScanDraft> drafts = [];
   bool busy = false;
+  String imagePath = '';
+  DateTime? scannedAt;
 
   @override
   Widget build(BuildContext c) {
@@ -75,6 +78,8 @@ class _S extends State<ScanNotesScreen> {
       if (r == null) return;
       setState(() {
         raw = r.text;
+        imagePath = r.imagePath;
+        scannedAt = DateTime.now();
         drafts = interpreter.interpret(raw, widget.store.equipment);
       });
     } finally {
@@ -84,16 +89,61 @@ class _S extends State<ScanNotesScreen> {
 
   void _commit() {
     final t = context.tr;
-    for (final d in drafts.where((x) => x.selected)) {
-      switch (d.kind) {
-        case DraftKind.log:
-          widget.store.addLog(d.text, tag: d.tag);
-        case DraftKind.action:
-          widget.store.addTask(d.text, tag: d.tag);
-        case DraftKind.watch:
-          widget.store.addWatch(t.scannedWatchItem, d.text, tag: d.tag);
+    final scanId = DateTime.now().microsecondsSinceEpoch.toString();
+    final entries = <ScanEntryRecord>[];
+
+    for (var i = 0; i < drafts.length; i++) {
+      final d = drafts[i];
+      String? entityId;
+      if (d.selected) {
+        switch (d.kind) {
+          case DraftKind.log:
+            entityId = widget.store.addScannedLog(
+              d.text,
+              tag: d.tag,
+              scanId: scanId,
+            );
+          case DraftKind.action:
+            entityId = widget.store.addScannedTask(
+              d.text,
+              tag: d.tag,
+              scanId: scanId,
+            );
+          case DraftKind.watch:
+            entityId = widget.store.addScannedWatch(
+              t.scannedWatchItem,
+              d.text,
+              tag: d.tag,
+              scanId: scanId,
+            );
+        }
       }
+      entries.add(
+        ScanEntryRecord(
+          id: '${scanId}_$i',
+          kind: ScanEntryKind.values.byName(d.kind.name),
+          text: d.text,
+          equipmentTag: d.tag,
+          tagConfidence: d.tagConfidence,
+          approved: d.selected,
+          createdEntityId:
+              entityId == null || entityId.isEmpty ? null : entityId,
+        ),
+      );
     }
+
+    widget.store.saveScanRecord(
+      ScanRecord(
+        id: scanId,
+        createdAt: scannedAt ?? DateTime.now(),
+        imagePath: imagePath,
+        rawText: raw,
+        operatorName: widget.store.currentShift?.operatorName ?? 'Operator',
+        shiftId: widget.store.currentShift?.id,
+        entries: entries,
+        reviewedAt: DateTime.now(),
+      ),
+    );
     Navigator.pop(context);
   }
 }
