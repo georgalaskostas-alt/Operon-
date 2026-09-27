@@ -155,6 +155,21 @@ class OperonStrings {
   String get checkTag => pick('CHECK TAG', 'ΕΛΕΓΧΟΣ TAG');
   String get confirmSelected => pick('Confirm selected entries', 'Επιβεβαίωση επιλεγμένων καταχωρήσεων');
   String get scannedWatchItem => pick('Scanned watch item', 'Σαρωμένο σημείο παρακολούθησης');
+  String get reviewScan => pick('Review scan', 'Έλεγχος σάρωσης');
+  String get reviewEntry => pick('Review entry', 'Έλεγχος καταχώρησης');
+  String get entryText => pick('Entry text', 'Κείμενο καταχώρησης');
+  String get entryType => pick('Entry type', 'Τύπος καταχώρησης');
+  String get logEntry => pick('Log', 'Ημερολόγιο');
+  String get actionEntry => pick('Action', 'Ενέργεια');
+  String get watchEntry => pick('Watch', 'Παρακολούθηση');
+  String get noEquipmentTag => pick('No equipment TAG', 'Χωρίς TAG εξοπλισμού');
+  String get lowConfidence => pick('LOW CONFIDENCE', 'ΧΑΜΗΛΗ ΒΕΒΑΙΟΤΗΤΑ');
+  String get operatorReviewRequired => pick(
+    'Operator review required before saving',
+    'Απαιτείται έλεγχος χειριστή πριν την αποθήκευση',
+  );
+  String get updateEntry => pick('Update entry', 'Ενημέρωση καταχώρησης');
+
   String get assistant => 'OPERON Assistant';
   String get groundedPrivate => pick('Grounded · private-first', 'Τεκμηριωμένο · private-first');
   String get assistantSafety => pick(
