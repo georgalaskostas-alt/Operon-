@@ -185,12 +185,13 @@ class AppStore extends ChangeNotifier {
     _audit('handover.prepared','${h.outgoingOperator} · ${h.outgoingShift}',source:'handover',entityId:h.id);
     addLog('Handover prepared · ${h.outgoingOperator} · ${h.outgoingShift}',source:'handover');
   }
-  void acceptHandover(ShiftHandover h,String incoming){
-    final clean=incoming.trim();
-    if(h.accepted||clean.isEmpty)return;
+  void acceptHandover(ShiftHandover h,String incoming,{required String acknowledgement}){
+    final clean=incoming.trim(),statement=acknowledgement.trim();
+    if(h.accepted||clean.isEmpty||statement.isEmpty)return;
     h.incomingOperator=clean;
     h.acceptedAt=DateTime.now();
-    _audit('handover.accepted','${h.outgoingOperator} → $clean',source:'handover',entityId:h.id);
+    h.acceptanceStatement=statement;
+    _audit('handover.accepted','${h.outgoingOperator} → $clean · operator acknowledgement recorded',source:'handover',entityId:h.id);
     addLog('Handover accepted · ${h.outgoingOperator} → $clean',source:'handover');
   }
   EquipmentKnowledge knowledgeFor(String tag)=>knowledge.putIfAbsent(tag,()=>EquipmentKnowledge(tag:tag));
