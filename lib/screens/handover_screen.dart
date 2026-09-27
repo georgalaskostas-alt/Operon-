@@ -196,9 +196,41 @@ class _S extends State<HandoverScreen> {
     setState(() {});
   }
 
-  void _accept(ShiftHandover h) {
+  Future<void> _accept(ShiftHandover h) async {
     if (incoming.text.trim().isEmpty) return;
-    widget.store.acceptHandover(h, incoming.text);
+    final t = context.tr;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(t.handoverAcknowledgement),
+        content: Text(
+          t.pick(
+            'Confirm that you reviewed the recorded handover snapshot and are accepting receipt. This records your acknowledgement only; it does not verify plant state or field conditions.',
+            'Επιβεβαίωσε ότι έλεγξες το καταγεγραμμένο στιγμιότυπο παράδοσης και αποδέχεσαι την παραλαβή. Καταγράφεται μόνο η επιβεβαίωσή σου· δεν επαληθεύεται η κατάσταση της μονάδας ή οι συνθήκες πεδίου.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(t.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(t.confirmHandoverAcceptance),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final statement = t.pick(
+      'Incoming operator reviewed the recorded handover snapshot and acknowledged receipt.',
+      'Ο παραλαμβάνων χειριστής έλεγξε το καταγεγραμμένο στιγμιότυπο παράδοσης και επιβεβαίωσε την παραλαβή.',
+    );
+    widget.store.acceptHandover(
+      h,
+      incoming.text,
+      acknowledgement: statement,
+    );
     setState(() {});
   }
 }
