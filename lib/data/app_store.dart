@@ -6,6 +6,7 @@ import '../models/process_circuit.dart';
 import '../models/operator_note.dart';
 import '../models/procedure_models.dart';
 import '../models/audit_event.dart';
+import '../models/scan_record.dart';
 import 'local_repository.dart';
 
 class AppStore extends ChangeNotifier {
@@ -19,6 +20,7 @@ class AppStore extends ChangeNotifier {
   final List<ProcedureRun> procedureRuns=[];
   final List<ShiftSession> shiftHistory=[];
   final List<AuditEvent> auditEvents=[];
+  final List<ScanRecord> scanRecords=[];
 
   Future<void> hydrate() async {
     final s=await _repository.load();
@@ -35,10 +37,11 @@ class AppStore extends ChangeNotifier {
       procedureRuns..clear()..addAll(((s['procedureRuns'] as List?)??[]).map((e)=>ProcedureRun.fromJson(Map<String,dynamic>.from(e))));
       shiftHistory..clear()..addAll(((s['shiftHistory'] as List?)??[]).map((e)=>ShiftSession.fromJson(Map<String,dynamic>.from(e))));
       auditEvents..clear()..addAll(((s['auditEvents'] as List?)??[]).map((e)=>AuditEvent.fromJson(Map<String,dynamic>.from(e))));
+      scanRecords..clear()..addAll(((s['scanRecords'] as List?)??[]).map((e)=>ScanRecord.fromJson(Map<String,dynamic>.from(e))));
     }
     hydrated=true; notifyListeners();
   }
-  Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList(),'currentShift':currentShift?.toJson(),'handovers':handovers.map((e)=>e.toJson()).toList(),'knowledge':knowledge.values.map((e)=>e.toJson()).toList(),'circuits':circuits.map((e)=>e.toJson()).toList(),'notes':notes.map((e)=>e.toJson()).toList(),'procedureRuns':procedureRuns.map((e)=>e.toJson()).toList(),'shiftHistory':shiftHistory.map((e)=>e.toJson()).toList(),'auditEvents':auditEvents.map((e)=>e.toJson()).toList()});
+  Future<void> _persist()=>_repository.save({'equipment':equipment.map((e)=>e.toJson()).toList(),'logs':logs.map((e)=>e.toJson()).toList(),'watch':watch.map((e)=>e.toJson()).toList(),'tasks':tasks.map((e)=>e.toJson()).toList(),'currentShift':currentShift?.toJson(),'handovers':handovers.map((e)=>e.toJson()).toList(),'knowledge':knowledge.values.map((e)=>e.toJson()).toList(),'circuits':circuits.map((e)=>e.toJson()).toList(),'notes':notes.map((e)=>e.toJson()).toList(),'procedureRuns':procedureRuns.map((e)=>e.toJson()).toList(),'shiftHistory':shiftHistory.map((e)=>e.toJson()).toList(),'auditEvents':auditEvents.map((e)=>e.toJson()).toList(),'scanRecords':scanRecords.map((e)=>e.toJson()).toList()});
   Future<void> _saveQueue=Future<void>.value();
   void _changed(){
     notifyListeners();
@@ -73,6 +76,45 @@ class AppStore extends ChangeNotifier {
   ];
 
   void addLog(String text,{String? tag,String source='manual',Priority priority=Priority.normal}){final clean=text.trim();if(clean.isEmpty)return;final id=DateTime.now().microsecondsSinceEpoch.toString();logs.insert(0,LogEntry(id:id,createdAt:DateTime.now(),text:clean,equipmentTag:tag,source:source,priority:priority));_audit('log.created',clean,tag:tag,source:source,entityId:id);_changed();}
+  String addScannedLog(String text,{String? tag,required String scanId}){
+    final clean=text.trim(),id=_id();
+    if(clean.isEmpty)return '';
+    logs.insert(0,LogEntry(id:id,createdAt:DateTime.now(),text:clean,equipmentTag:tag,source:'scan:$scanId'));
+    _audit('log.created',clean,tag:tag,source:'scan',entityId:id);
+    _changed();
+    return id;
+  }
+
+  String addScannedTask(String text,{String? tag,required String scanId}){
+    final clean=text.trim(),id=_id();
+    if(clean.isEmpty)return '';
+    tasks.insert(0,OperatorTask(id:id,title:clean,equipmentTag:tag,createdShiftId:currentShift?.id));
+    _audit('action.created',clean,tag:tag,source:'scan',entityId:id);
+    _changed();
+    return id;
+  }
+
+  String addScannedWatch(String title,String detail,{String? tag,required String scanId}){
+    final clean=detail.trim(),id=_id();
+    if(clean.isEmpty)return '';
+    watch.insert(0,WatchItem(id:id,title:title.trim(),detail:clean,equipmentTag:tag));
+    _audit('watch.created',clean,tag:tag,source:'scan',entityId:id);
+    _changed();
+    return id;
+  }
+
+  void saveScanRecord(ScanRecord record){
+    if(scanRecords.any((e)=>e.id==record.id))return;
+    scanRecords.insert(0,record);
+    _audit(
+      'scan.reviewed',
+      'OCR scan · ${record.entries.where((e)=>e.approved).length} approved entries',
+      source:'scan',
+      entityId:record.id,
+    );
+    _changed();
+  }
+
   void setEquipmentState(Equipment item,EquipmentState state){
     if(item.state==state)return;
     final previous=item.state;
