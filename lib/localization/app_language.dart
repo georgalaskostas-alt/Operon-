@@ -377,6 +377,15 @@ class OperonStrings {
   String get noteEvent => pick('Operator note', 'Σημείωση χειριστή');
   String get auditEvent => pick('Audit event', 'Συμβάν audit');
   String get viewFullTimeline => pick('View full timeline', 'Προβολή πλήρους χρονολογίου');
+  String get recordDetails => pick('Record details', 'Λεπτομέρειες εγγραφής');
+  String get recordStatus => pick('Status', 'Κατάσταση');
+  String get recordCreated => pick('Created', 'Δημιουργήθηκε');
+  String get recordDue => pick('Due', 'Προθεσμία');
+  String get recordSource => pick('Source', 'Πηγή');
+  String get recordId => pick('Record ID', 'ID εγγραφής');
+  String get activeLabel => pick('ACTIVE', 'ΕΝΕΡΓΟ');
+  String get resolvedLabel => pick('RESOLVED', 'ΕΠΙΛΥΜΕΝΟ');
+  String get pinnedLabel => pick('PINNED', 'ΚΑΡΦΙΤΣΩΜΕΝΟ');
   String get noRecordedEvents => pick('No recorded events', 'Δεν υπάρχουν καταγεγραμμένα συμβάντα');
   String get circuits => pick('CIRCUITS', 'ΚΥΚΛΩΜΑΤΑ');
   String get watch => pick('WATCH', 'ΠΑΡΑΚΟΛΟΥΘΗΣΗ');
