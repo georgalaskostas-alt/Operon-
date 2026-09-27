@@ -5,9 +5,6 @@ import '../localization/app_language.dart';
 import '../models/models.dart';
 import '../theme/operon_theme.dart';
 import 'scan_history_screen.dart';
-import 'actions_screen.dart';
-import 'watch_center_screen.dart';
-import 'notes_screen.dart';
 
 enum _TimelineKind { state, log, action, watch, note, scan, audit }
 
@@ -83,26 +80,96 @@ class _EquipmentTimelineScreenState extends State<EquipmentTimelineScreen> {
         );
       };
     }
+    if (event.entityId == null) return null;
     switch (event.kind) {
       case _TimelineKind.action:
-        return () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => ActionsScreen(store: widget.store)),
-            ).then((_) => setState(() {}));
+        return () {
+          final item = widget.store.tasks.firstWhere((x) => x.id == event.entityId);
+          _showRecordDetails(
+            title: item.title,
+            status: item.state.name,
+            createdAt: item.createdAt,
+            dueAt: item.dueAt,
+            source: item.createdShiftId == null ? 'action' : 'shift ${item.createdShiftId}',
+            id: item.id,
+          );
+        };
       case _TimelineKind.watch:
-        return () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => WatchCenterScreen(store: widget.store)),
-            ).then((_) => setState(() {}));
+        return () {
+          final item = widget.store.watch.firstWhere((x) => x.id == event.entityId);
+          _showRecordDetails(
+            title: item.title,
+            body: item.detail,
+            status: item.active ? context.tr.activeLabel : context.tr.resolvedLabel,
+            source: 'watch',
+            id: item.id,
+          );
+        };
       case _TimelineKind.note:
-        return () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => NotesScreen(store: widget.store)),
-            ).then((_) => setState(() {}));
+        return () {
+          final item = widget.store.notes.firstWhere((x) => x.id == event.entityId);
+          _showRecordDetails(
+            title: item.title,
+            body: item.body,
+            status: item.resolved
+                ? context.tr.resolvedLabel
+                : (item.pinned ? context.tr.pinnedLabel : context.tr.activeLabel),
+            createdAt: item.createdAt,
+            source: 'note',
+            id: item.id,
+          );
+        };
       default:
         return null;
     }
   }
+
+  void _showRecordDetails({
+    required String title,
+    String? body,
+    required String status,
+    DateTime? createdAt,
+    DateTime? dueAt,
+    required String source,
+    required String id,
+  }) {
+    final t = context.tr;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.recordDetails,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 14),
+              Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+              if (body != null && body.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(body),
+              ],
+              const SizedBox(height: 16),
+              _detailLine(t.recordStatus, status),
+              if (createdAt != null) _detailLine(t.recordCreated, _stamp(createdAt)),
+              if (dueAt != null) _detailLine(t.recordDue, _stamp(dueAt)),
+              _detailLine(t.recordSource, source),
+              _detailLine(t.recordId, id),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _detailLine(String label, String value) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text('$label: $value',
+            style: const TextStyle(color: OperonTheme.muted)),
+      );
 
   Widget _chip(String label, _TimelineKind? value) => Padding(
         padding: const EdgeInsets.only(right: 8),
@@ -137,6 +204,7 @@ class _EquipmentTimelineScreenState extends State<EquipmentTimelineScreen> {
         detail: '${x.title} · ${x.state.name}',
         source: x.createdShiftId == null ? 'action' : 'shift ${x.createdShiftId}',
         icon: Icons.pending_actions,
+        entityId: x.id,
       ));
     }
 
@@ -152,6 +220,7 @@ class _EquipmentTimelineScreenState extends State<EquipmentTimelineScreen> {
         detail: '${x.title}\n${x.detail}',
         source: x.active ? 'watch' : 'resolved',
         icon: Icons.visibility,
+        entityId: x.id,
       ));
     }
 
@@ -163,6 +232,7 @@ class _EquipmentTimelineScreenState extends State<EquipmentTimelineScreen> {
         detail: '${x.title}\n${x.body}',
         source: x.resolved ? 'resolved' : 'note',
         icon: Icons.note_alt_outlined,
+        entityId: x.id,
       ));
     }
 
@@ -212,6 +282,7 @@ class _EquipmentEvent {
   final String title, detail, source;
   final IconData icon;
   final String? scanId;
+  final String? entityId;
   const _EquipmentEvent({
     required this.at,
     required this.kind,
@@ -220,6 +291,7 @@ class _EquipmentEvent {
     required this.source,
     required this.icon,
     this.scanId,
+    this.entityId,
   });
 }
 
