@@ -75,24 +75,21 @@ class _S extends State<ProceduresScreen> {
   }
 
   void _openHistory(ProcedureRun r) {
-    final p = widget.store.controlledProcedures.firstWhere(
-      (x) => x.id == r.procedureId,
-      orElse: () => ControlledProcedure(
-        id: r.procedureId,
-        title: r.procedureTitle,
-        category: '',
-        source: r.source,
-        version: r.version,
-        steps: r.records
-            .map(
-              (x) => ProcedureStep(
-                id: x.stepId,
-                title: x.stepTitle.isEmpty ? x.stepId : x.stepTitle,
-                safetyCritical: x.safetyCritical,
-              ),
-            )
-            .toList(),
-      ),
+    final p = ControlledProcedure(
+      id: r.procedureId,
+      title: r.procedureTitle,
+      category: '',
+      source: r.source,
+      version: r.version,
+      steps: r.records
+          .map(
+            (x) => ProcedureStep(
+              id: x.stepId,
+              title: x.stepTitle.isEmpty ? x.stepId : x.stepTitle,
+              safetyCritical: x.safetyCritical,
+            ),
+          )
+          .toList(),
     );
     Navigator.push(
       context,
