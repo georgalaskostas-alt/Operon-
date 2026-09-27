@@ -260,14 +260,24 @@ class _EquipmentTimelineScreenState extends State<EquipmentTimelineScreen> {
           x.type == 'note.created') {
         continue;
       }
-      final isState = x.type == 'equipment.state_changed';
+      final kind = x.type == 'equipment.state_changed'
+          ? _TimelineKind.state
+          : x.type.startsWith('action.')
+              ? _TimelineKind.action
+              : x.type.startsWith('watch.')
+                  ? _TimelineKind.watch
+                  : x.type.startsWith('note.')
+                      ? _TimelineKind.note
+                      : _TimelineKind.audit;
+      final isState = kind == _TimelineKind.state;
       result.add(_EquipmentEvent(
         at: x.createdAt,
-        kind: isState ? _TimelineKind.state : _TimelineKind.audit,
+        kind: kind,
         title: isState ? t.stateChange : t.auditEvent,
         detail: x.summary,
         source: x.source,
         icon: isState ? Icons.swap_horiz : Icons.verified_user_outlined,
+        entityId: x.entityId,
       ));
     }
 
