@@ -359,6 +359,16 @@ class OperonStrings {
   String get linkedProcedures => pick('Linked procedures', 'Συνδεδεμένες διαδικασίες');
   String get activeWatch => pick('Active watch', 'Ενεργή παρακολούθηση');
   String get recordedHistory => pick('Recorded history', 'Καταγεγραμμένο ιστορικό');
+  String get equipmentTimeline => pick('Equipment timeline', 'Χρονολόγιο εξοπλισμού');
+  String get allRecordedActivity => pick('All recorded activity', 'Όλη η καταγεγραμμένη δραστηριότητα');
+  String get noEquipmentActivity => pick('No recorded activity for this equipment', 'Δεν υπάρχει καταγεγραμμένη δραστηριότητα για αυτόν τον εξοπλισμό');
+  String get stateChange => pick('State change', 'Αλλαγή κατάστασης');
+  String get logEvent => pick('Log entry', 'Καταχώρηση ημερολογίου');
+  String get actionEvent => pick('Action', 'Ενέργεια');
+  String get watchEvent => pick('Watch item', 'Σημείο παρακολούθησης');
+  String get noteEvent => pick('Operator note', 'Σημείωση χειριστή');
+  String get auditEvent => pick('Audit event', 'Συμβάν audit');
+  String get viewFullTimeline => pick('View full timeline', 'Προβολή πλήρους χρονολογίου');
   String get noRecordedEvents => pick('No recorded events', 'Δεν υπάρχουν καταγεγραμμένα συμβάντα');
   String get circuits => pick('CIRCUITS', 'ΚΥΚΛΩΜΑΤΑ');
   String get watch => pick('WATCH', 'ΠΑΡΑΚΟΛΟΥΘΗΣΗ');
