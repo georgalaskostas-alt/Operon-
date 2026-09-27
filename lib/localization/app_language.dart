@@ -124,6 +124,11 @@ class OperonStrings {
   String get handoverNotes => pick('Handover notes', 'Σημειώσεις παράδοσης');
   String get prepareHandover => pick('Prepare handover', 'Προετοιμασία παράδοσης');
   String get handoverHistory => pick('Handover history', 'Ιστορικό παραδόσεων');
+  String get handoverSnapshot => pick('Shift snapshot', 'Στιγμιότυπο βάρδιας');
+  String get overdueAtHandover => pick('Overdue at handover', 'Εκπρόθεσμα στην παράδοση');
+  String get carriedAtHandover => pick('Carried into this shift', 'Μεταφερόμενα σε αυτή τη βάρδια');
+  String get shiftEvents => pick('Shift events', 'Συμβάντα βάρδιας');
+  String get noShiftEvents => pick('No recorded shift events', 'Δεν υπάρχουν καταγεγραμμένα συμβάντα βάρδιας');
   String get pending => pick('Pending', 'Σε αναμονή');
   String get accepted => pick('Accepted', 'Αποδεκτή');
   String get awaitingAcceptance => pick('Awaiting acceptance', 'Αναμονή αποδοχής');
