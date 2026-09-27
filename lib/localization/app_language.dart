@@ -169,6 +169,28 @@ class OperonStrings {
     'Απαιτείται έλεγχος χειριστή πριν την αποθήκευση',
   );
   String get updateEntry => pick('Update entry', 'Ενημέρωση καταχώρησης');
+  String get scanHistory => pick('Scan history', 'Ιστορικό σαρώσεων');
+  String get noScanHistory => pick('No scans recorded yet', 'Δεν υπάρχουν ακόμη καταγεγραμμένες σαρώσεις');
+  String get scanDetails => pick('Scan details', 'Λεπτομέρειες σάρωσης');
+  String get originalPhoto => pick('Original photo', 'Αρχική φωτογραφία');
+  String get originalPhotoUnavailable => pick(
+    'Original photo is no longer available on this device.',
+    'Η αρχική φωτογραφία δεν είναι πλέον διαθέσιμη σε αυτή τη συσκευή.',
+  );
+  String get rawOcrText => pick('Raw OCR text', 'Αρχικό κείμενο OCR');
+  String get noRecognizedText => pick('No recognized text', 'Δεν υπάρχει αναγνωρισμένο κείμενο');
+  String get reviewedEntries => pick('Reviewed entries', 'Ελεγμένες καταχωρήσεις');
+  String get approved => pick('APPROVED', 'ΕΓΚΡΙΘΗΚΕ');
+  String get rejected => pick('REJECTED', 'ΑΠΟΡΡΙΦΘΗΚΕ');
+  String get approvedEntries => pick('approved', 'εγκεκριμένες');
+  String get tagConfidence => pick('TAG confidence', 'Βεβαιότητα TAG');
+  String get linkedRecord => pick('Linked record', 'Συνδεδεμένη εγγραφή');
+  String get noLinkedRecord => pick('No linked record', 'Χωρίς συνδεδεμένη εγγραφή');
+  String get scanId => pick('Scan ID', 'ID σάρωσης');
+  String get shiftId => pick('Shift ID', 'ID βάρδιας');
+  String get reviewedAt => pick('Reviewed', 'Ελέγχθηκε');
+  String get unknownOperator => pick('Unknown operator', 'Άγνωστος χειριστής');
+
 
   String get assistant => 'OPERON Assistant';
   String get groundedPrivate => pick('Grounded · private-first', 'Τεκμηριωμένο · private-first');
