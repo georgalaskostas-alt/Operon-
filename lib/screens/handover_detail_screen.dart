@@ -45,6 +45,14 @@ class HandoverDetailScreen extends StatelessWidget {
           _section(t.watchItems, handover.watchItems),
           _section(t.timerReminders, handover.timers),
           _section(t.shiftEvents, handover.shiftEvents),
+          if (handover.acceptanceStatement != null)
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(handover.acceptanceStatement!),
+              ),
+            ),
           SectionLabel(t.handoverNotesSection),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
