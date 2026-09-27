@@ -5,6 +5,9 @@ import '../localization/app_language.dart';
 import '../models/models.dart';
 import '../theme/operon_theme.dart';
 import 'scan_history_screen.dart';
+import 'actions_screen.dart';
+import 'watch_center_screen.dart';
+import 'notes_screen.dart';
 
 enum _TimelineKind { state, log, action, watch, note, scan, audit }
 
@@ -57,25 +60,48 @@ class _EquipmentTimelineScreenState extends State<EquipmentTimelineScreen> {
                     itemCount: events.length,
                     itemBuilder: (_, i) => _TimelineCard(
                       event: events[i],
-                      onTap: events[i].scanId == null
-                          ? null
-                          : () {
-                              final scan = widget.store.scanRecords.firstWhere(
-                                (s) => s.id == events[i].scanId,
-                              );
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ScanHistoryDetailScreen(scan: scan),
-                                ),
-                              );
-                            },
+                      onTap: _onEventTap(events[i]),
                     ),
                   ),
           ),
         ],
       ),
     );
+  }
+
+  VoidCallback? _onEventTap(_EquipmentEvent event) {
+    if (event.scanId != null) {
+      return () {
+        final scan = widget.store.scanRecords.firstWhere(
+          (s) => s.id == event.scanId,
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ScanHistoryDetailScreen(scan: scan),
+          ),
+        );
+      };
+    }
+    switch (event.kind) {
+      case _TimelineKind.action:
+        return () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ActionsScreen(store: widget.store)),
+            ).then((_) => setState(() {}));
+      case _TimelineKind.watch:
+        return () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => WatchCenterScreen(store: widget.store)),
+            ).then((_) => setState(() {}));
+      case _TimelineKind.note:
+        return () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => NotesScreen(store: widget.store)),
+            ).then((_) => setState(() {}));
+      default:
+        return null;
+    }
   }
 
   Widget _chip(String label, _TimelineKind? value) => Padding(
