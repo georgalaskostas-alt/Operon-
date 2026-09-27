@@ -7,6 +7,7 @@ import '../models/operator_timer.dart';
 import '../models/shift_handover.dart';
 import '../theme/operon_theme.dart';
 import '../widgets/common.dart';
+import 'handover_detail_screen.dart';
 
 class HandoverScreen extends StatefulWidget {
   final AppStore store;
@@ -143,6 +144,12 @@ class _S extends State<HandoverScreen> {
           SectionLabel(t.handoverHistory),
           ...widget.store.handovers.take(8).map(
                 (h) => ListTile(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => HandoverDetailScreen(handover: h),
+                    ),
+                  ),
                   leading: Icon(h.accepted ? Icons.verified : Icons.schedule,
                       color: h.accepted ? OperonTheme.teal : Colors.orange),
                   title: Text(
@@ -150,6 +157,7 @@ class _S extends State<HandoverScreen> {
                   subtitle: Text(
                     '${h.outgoingShift} · ${h.accepted ? '${t.accepted} ${hhmm(h.acceptedAt!)}' : t.awaitingAcceptance}',
                   ),
+                  trailing: const Icon(Icons.chevron_right),
                 ),
               )
         ],
