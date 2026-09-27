@@ -101,13 +101,13 @@ class _S extends State<HandoverScreen> {
               title: Text(e.equipmentTag ?? e.title),
               subtitle: Text('${e.title} · ${e.detail}'))),
           SectionLabel(t.overdueAtHandover),
-          if (overdue.isEmpty) ListTile(title: Text('—')),
+          if (overdue.isEmpty) const ListTile(title: Text('—')),
           ...overdue.map((e) => ListTile(
               leading: const Icon(Icons.warning_amber, color: Colors.orange),
               title: Text(e.title),
               subtitle: Text(e.equipmentTag ?? t.general))),
           SectionLabel(t.carriedAtHandover),
-          if (carried.isEmpty) ListTile(title: Text('—')),
+          if (carried.isEmpty) const ListTile(title: Text('—')),
           ...carried.map((e) => ListTile(
               leading: const Icon(Icons.redo, color: OperonTheme.teal),
               title: Text(e.title),
