@@ -53,12 +53,52 @@ class _S extends State<ScanNotesScreen> {
               style:
                   const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
           ...drafts.map(
-            (d) => CheckboxListTile(
-              value: d.selected,
-              onChanged: (v) => setState(() => d.selected = v ?? false),
-              title: Text(d.text),
-              subtitle: Text(
-                  '${d.kind.name.toUpperCase()} · ${d.tag ?? t.noMatchedTag}${d.tag != null && d.tagConfidence < .9 ? ' · ${t.checkTag} ${(d.tagConfidence * 100).round()}%' : ''}'),
+            (d) => Card(
+              child: Column(
+                children: [
+                  CheckboxListTile(
+                    value: d.selected,
+                    onChanged: (v) =>
+                        setState(() => d.selected = v ?? false),
+                    title: Text(d.text),
+                    subtitle: Text(
+                      '${_kindLabel(t, d.kind)} · ${d.tag ?? t.noMatchedTag}',
+                    ),
+                    secondary: d.tagConfidence < .9
+                        ? const Icon(Icons.warning_amber, color: Colors.orange)
+                        : const Icon(Icons.verified, color: OperonTheme.teal),
+                  ),
+                  if (d.tagConfidence < .9)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber,
+                              size: 16, color: Colors.orange),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${t.lowConfidence} · ${d.tag == null ? t.operatorReviewRequired : '${t.checkTag} ${(d.tagConfidence * 100).round()}%'}',
+                              style: const TextStyle(
+                                color: Colors.orange,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => _reviewDraft(d),
+                      icon: const Icon(Icons.tune),
+                      label: Text(t.reviewEntry),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           FilledButton.icon(
@@ -68,6 +108,101 @@ class _S extends State<ScanNotesScreen> {
           )
         ]
       ]),
+    );
+  }
+
+  String _kindLabel(OperonStrings t, DraftKind kind) {
+    switch (kind) {
+      case DraftKind.log:
+        return t.logEntry;
+      case DraftKind.action:
+        return t.actionEntry;
+      case DraftKind.watch:
+        return t.watchEntry;
+    }
+  }
+
+  Future<void> _reviewDraft(ScanDraft draft) async {
+    final t = context.tr;
+    final textController = TextEditingController(text: draft.text);
+    var kind = draft.kind;
+    var tag = draft.tag ?? '';
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (c, setDialogState) => AlertDialog(
+          title: Text(t.reviewEntry),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: textController,
+                  minLines: 2,
+                  maxLines: 5,
+                  decoration: InputDecoration(labelText: t.entryText),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<DraftKind>(
+                  initialValue: kind,
+                  decoration: InputDecoration(labelText: t.entryType),
+                  items: DraftKind.values
+                      .map(
+                        (x) => DropdownMenuItem(
+                          value: x,
+                          child: Text(_kindLabel(t, x)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) {
+                    if (v != null) setDialogState(() => kind = v);
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: tag,
+                  decoration: InputDecoration(labelText: t.equipmentTag),
+                  items: [
+                    DropdownMenuItem(
+                      value: '',
+                      child: Text(t.noEquipmentTag),
+                    ),
+                    ...widget.store.equipment.map(
+                      (e) => DropdownMenuItem(
+                        value: e.tag,
+                        child: Text('${e.tag} · ${e.name}'),
+                      ),
+                    ),
+                  ],
+                  onChanged: (v) =>
+                      setDialogState(() => tag = v ?? ''),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c),
+              child: Text(t.cancel),
+            ),
+            FilledButton(
+              onPressed: textController.text.trim().isEmpty
+                  ? null
+                  : () {
+                      setState(() {
+                        draft.text = textController.text.trim();
+                        draft.kind = kind;
+                        draft.tag = tag.isEmpty ? null : tag;
+                        draft.tagConfidence = tag.isEmpty ? 0 : 1;
+                      });
+                      Navigator.pop(c);
+                    },
+              child: Text(t.updateEntry),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
