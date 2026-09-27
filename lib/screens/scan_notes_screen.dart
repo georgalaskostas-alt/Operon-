@@ -5,6 +5,7 @@ import '../models/scan_record.dart';
 import '../services/note_ocr_service.dart';
 import '../services/note_interpreter.dart';
 import '../theme/operon_theme.dart';
+import 'scan_history_screen.dart';
 
 class ScanNotesScreen extends StatefulWidget {
   final AppStore store;
@@ -40,6 +41,19 @@ class _S extends State<ScanNotesScreen> {
           icon: const Icon(Icons.camera_alt),
           label: Text(busy ? t.reading : t.photographNote),
         ),
+        if (widget.store.scanRecords.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ScanHistoryScreen(store: widget.store),
+              ),
+            ),
+            icon: const Icon(Icons.history),
+            label: Text(t.scanHistory),
+          ),
+        ],
         if (raw.isNotEmpty) ...[
           const SizedBox(height: 16),
           TextField(
