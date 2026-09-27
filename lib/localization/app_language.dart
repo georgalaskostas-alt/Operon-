@@ -117,6 +117,8 @@ class OperonStrings {
   String get waitingAcceptance => pick('HANDOVER WAITING FOR ACCEPTANCE', 'ΠΑΡΑΔΟΣΗ ΣΕ ΑΝΑΜΟΝΗ ΑΠΟΔΟΧΗΣ');
   String get incomingOperator => pick('Incoming operator', 'Παραλαμβάνων χειριστής');
   String get acceptHandover => pick('Accept handover', 'Αποδοχή παράδοσης');
+  String get handoverAcknowledgement => pick('Operator acknowledgement', 'Επιβεβαίωση χειριστή');
+  String get confirmHandoverAcceptance => pick('Confirm acceptance', 'Επιβεβαίωση αποδοχής');
   String get openActions => pick('Open actions', 'Ανοιχτές ενέργειες');
   String get unavailableMaintenance => pick('Equipment unavailable / maintenance', 'Μη διαθέσιμος εξοπλισμός / συντήρηση');
   String get timerReminders => pick('Timers / reminders', 'Χρονόμετρα / υπενθυμίσεις');
