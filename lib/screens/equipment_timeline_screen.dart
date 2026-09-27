@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../data/app_store.dart';
 import '../localization/app_language.dart';
 import '../models/models.dart';
-import '../models/scan_record.dart';
 import '../theme/operon_theme.dart';
 
 enum _TimelineKind { state, log, action, watch, note, scan, audit }
