@@ -144,6 +144,7 @@ class LocalRepository {
   Future<void> clear() async {
     final db = await _database();
     await db.transaction((txn) async {
+      await txn.delete('operator_timers');
       await txn.delete('audit_events');
       await txn.delete('app_state');
       await txn.delete('repository_meta');
