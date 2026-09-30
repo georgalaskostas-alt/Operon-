@@ -24,6 +24,29 @@ class _S extends State<ProcedureRunScreen> {
           title: Text('${p.source} · v${p.version}'),
           subtitle: Text(t.operatorConfirmSafety),
         )),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(t.procedureRunDetails,
+                    style: const TextStyle(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 8),
+                _meta(t.procedureVersion, r.version),
+                _meta(t.procedureSource, r.source),
+                if (r.category.isNotEmpty) _meta(t.procedureCategory, r.category),
+                _meta(t.procedureOperator, r.operatorName),
+                _meta(t.procedureStarted, _stamp(r.startedAt)),
+                if (r.pausedAt != null) _meta(t.procedurePausedAt, _stamp(r.pausedAt!)),
+                if (r.cancelledAt != null) _meta(t.procedureCancelledAt, _stamp(r.cancelledAt!)),
+                if (r.completedAt != null) _meta(t.procedureEnded, _stamp(r.completedAt!)),
+                if (r.equipmentTags.isNotEmpty)
+                  _meta(t.procedureLinkedEquipment, r.equipmentTags.join(', ')),
+              ],
+            ),
+          ),
+        ),
         LinearProgressIndicator(value: p.steps.isEmpty ? 0 : r.completedSteps / p.steps.length),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
@@ -122,6 +145,25 @@ class _S extends State<ProcedureRunScreen> {
           ])
       ]),
     );
+  }
+
+  Widget _meta(String label, String value) => Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Text.rich(
+          TextSpan(children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            TextSpan(text: value),
+          ]),
+        ),
+      );
+
+  String _stamp(DateTime value) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(value.day)}/${two(value.month)}/${value.year} '
+        '${two(value.hour)}:${two(value.minute)}';
   }
 
   void _editStepNote(StepRecord record) {
