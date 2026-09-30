@@ -231,6 +231,8 @@ class AppStore extends ChangeNotifier {
       version:p.version,
       source:p.source,
       operatorName:currentShift?.operatorName??'Operator',
+      category:p.category,
+      equipmentTags:List<String>.from(p.equipmentTags),
       startedAt:DateTime.now(),
       records:p.steps.map((e)=>StepRecord(
         stepId:e.id,
@@ -302,8 +304,12 @@ class AppStore extends ChangeNotifier {
         r.state!=ProcedureRunState.paused){
       return false;
     }
+    final now=DateTime.now();
     r.state=state;
-    r.completedAt=state==ProcedureRunState.completed?DateTime.now():null;
+    if(state==ProcedureRunState.completed)r.completedAt=now;
+    if(state==ProcedureRunState.paused)r.pausedAt=now;
+    if(state==ProcedureRunState.active)r.pausedAt=null;
+    if(state==ProcedureRunState.cancelled)r.cancelledAt=now;
     _audit('procedure.state_changed','${r.procedureTitle} → ${state.name}',source:'procedure',entityId:r.id);
     addLog('Procedure ${r.procedureTitle} → ${state.name}',source:'procedure');
     return true;
