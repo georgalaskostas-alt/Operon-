@@ -153,6 +153,16 @@ class OperonStrings {
     'Χρησιμοποίησε μόνο ελεγχόμενες διαδικασίες της εγκατάστασης. Το OPERON καταγράφει την πρόοδο του χειριστή· δεν αντικαθιστά την εγκεκριμένη διαδικασία, DCS/SIS, PTW ή LOTO.',
   );
   String get runHistory => pick('RUN HISTORY', 'ΙΣΤΟΡΙΚΟ ΕΚΤΕΛΕΣΕΩΝ');
+  String get procedureRunDetails => pick('Run details', 'Λεπτομέρειες εκτέλεσης');
+  String get procedureVersion => pick('Version', 'Έκδοση');
+  String get procedureSource => pick('Controlled source', 'Ελεγχόμενη πηγή');
+  String get procedureCategory => pick('Category', 'Κατηγορία');
+  String get procedureOperator => pick('Operator', 'Χειριστής');
+  String get procedureStarted => pick('Started', 'Έναρξη');
+  String get procedureEnded => pick('Ended', 'Λήξη');
+  String get procedureLinkedEquipment => pick('Linked equipment', 'Συνδεδεμένος εξοπλισμός');
+  String get procedurePausedAt => pick('Paused at', 'Παύση στις');
+  String get procedureCancelledAt => pick('Cancelled at', 'Ακυρώθηκε στις');
   String get scanHandwrittenTitle => pick('Scan handwritten notes', 'Σάρωση χειρόγραφων σημειώσεων');
   String get ocrReview => pick('Photo → OCR → operator review', 'Φωτογραφία → OCR → έλεγχος χειριστή');
   String get ocrSafety => pick(
