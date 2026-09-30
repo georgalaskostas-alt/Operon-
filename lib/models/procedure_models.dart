@@ -72,10 +72,14 @@ class StepRecord {
 
 class ProcedureRun {
   final String id, procedureId, procedureTitle, version, source, operatorName;
+  final String category;
+  final List<String> equipmentTags;
   final DateTime startedAt;
   final List<StepRecord> records;
   ProcedureRunState state;
   DateTime? completedAt;
+  DateTime? pausedAt;
+  DateTime? cancelledAt;
   ProcedureRun({
     required this.id,
     required this.procedureId,
@@ -83,10 +87,14 @@ class ProcedureRun {
     required this.version,
     required this.source,
     required this.operatorName,
+    this.category = '',
+    this.equipmentTags = const [],
     required this.startedAt,
     required this.records,
     this.state = ProcedureRunState.active,
     this.completedAt,
+    this.pausedAt,
+    this.cancelledAt,
   });
 
   int get completedSteps => records.where((e) => e.confirmed).length;
@@ -102,10 +110,14 @@ class ProcedureRun {
         'version': version,
         'source': source,
         'operatorName': operatorName,
+        'category': category,
+        'equipmentTags': equipmentTags,
         'startedAt': startedAt.toIso8601String(),
         'records': records.map((e) => e.toJson()).toList(),
         'state': state.name,
         'completedAt': completedAt?.toIso8601String(),
+        'pausedAt': pausedAt?.toIso8601String(),
+        'cancelledAt': cancelledAt?.toIso8601String(),
       };
 
   factory ProcedureRun.fromJson(Map<String, dynamic> j) => ProcedureRun(
@@ -115,6 +127,8 @@ class ProcedureRun {
         version: j['version'] ?? '',
         source: j['source'] ?? '',
         operatorName: j['operatorName'] ?? '',
+        category: j['category'] ?? '',
+        equipmentTags: List<String>.from(j['equipmentTags'] ?? []),
         startedAt: DateTime.tryParse(j['startedAt'] ?? '') ?? DateTime.now(),
         records: ((j['records'] as List?) ?? [])
             .map((e) => StepRecord.fromJson(Map<String, dynamic>.from(e)))
@@ -126,5 +140,9 @@ class ProcedureRun {
         completedAt: j['completedAt'] == null
             ? null
             : DateTime.tryParse(j['completedAt']),
+        pausedAt: j['pausedAt'] == null ? null : DateTime.tryParse(j['pausedAt']),
+        cancelledAt: j['cancelledAt'] == null
+            ? null
+            : DateTime.tryParse(j['cancelledAt']),
       );
 }
