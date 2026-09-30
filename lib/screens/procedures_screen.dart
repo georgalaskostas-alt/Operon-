@@ -78,9 +78,10 @@ class _S extends State<ProceduresScreen> {
     final p = ControlledProcedure(
       id: r.procedureId,
       title: r.procedureTitle,
-      category: '',
+      category: r.category,
       source: r.source,
       version: r.version,
+      equipmentTags: r.equipmentTags,
       steps: r.records
           .map(
             (x) => ProcedureStep(
