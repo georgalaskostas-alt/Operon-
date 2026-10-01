@@ -294,7 +294,7 @@ class AppStore extends ChangeNotifier {
     return true;
   }
 
-  bool setProcedureRunState(ProcedureRun r,ProcedureRunState state){
+  bool setProcedureRunState(ProcedureRun r,ProcedureRunState state,{String? completedBy,String? completionStatement}){
     if(r.state==state)return true;
     if(r.state==ProcedureRunState.completed||r.state==ProcedureRunState.cancelled){
       return false;
@@ -315,7 +315,11 @@ class AppStore extends ChangeNotifier {
     }
     final now=DateTime.now();
     r.state=state;
-    if(state==ProcedureRunState.completed)r.completedAt=now;
+    if(state==ProcedureRunState.completed){
+      r.completedAt=now;
+      r.completedBy=completedBy?.trim();
+      r.completionStatement=completionStatement?.trim();
+    }
     if(state==ProcedureRunState.paused)r.pausedAt=now;
     if(state==ProcedureRunState.active)r.pausedAt=null;
     if(state==ProcedureRunState.cancelled)r.cancelledAt=now;
