@@ -88,6 +88,8 @@ class ProcedureRun {
   DateTime? completedAt;
   DateTime? pausedAt;
   DateTime? cancelledAt;
+  String? completedBy;
+  String? completionStatement;
   ProcedureRun({
     required this.id,
     required this.procedureId,
@@ -103,6 +105,8 @@ class ProcedureRun {
     this.completedAt,
     this.pausedAt,
     this.cancelledAt,
+    this.completedBy,
+    this.completionStatement,
   });
 
   int get completedSteps => records.where((e) => e.confirmed).length;
@@ -126,6 +130,8 @@ class ProcedureRun {
         'completedAt': completedAt?.toIso8601String(),
         'pausedAt': pausedAt?.toIso8601String(),
         'cancelledAt': cancelledAt?.toIso8601String(),
+        'completedBy': completedBy,
+        'completionStatement': completionStatement,
       };
 
   factory ProcedureRun.fromJson(Map<String, dynamic> j) => ProcedureRun(
@@ -152,5 +158,7 @@ class ProcedureRun {
         cancelledAt: j['cancelledAt'] == null
             ? null
             : DateTime.tryParse(j['cancelledAt']),
+        completedBy: j['completedBy'],
+        completionStatement: j['completionStatement'],
       );
 }
