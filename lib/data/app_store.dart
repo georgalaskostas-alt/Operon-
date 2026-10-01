@@ -246,18 +246,27 @@ class AppStore extends ChangeNotifier {
     return r;
   }
 
-  bool setProcedureStep(ProcedureRun r,String stepId,bool confirmed,{String? note}){
+  bool setProcedureStep(
+    ProcedureRun r,
+    String stepId,
+    bool confirmed, {
+    String? note,
+    String? confirmedBy,
+    String? confirmationStatement,
+  }) {
     if(r.state!=ProcedureRunState.active)return false;
     final matches=r.records.where((e)=>e.stepId==stepId);
     if(matches.isEmpty)return false;
     final x=matches.first;
-    if(x.confirmed==confirmed && note==null)return true;
+    if(x.confirmed==confirmed && note==null && confirmedBy==null && confirmationStatement==null)return true;
     x.confirmed=confirmed;
     x.confirmedAt=confirmed?DateTime.now():null;
+    x.confirmedBy=confirmed?confirmedBy?.trim():null;
+    x.confirmationStatement=confirmed?confirmationStatement?.trim():null;
     if(note!=null)x.note=note.trim();
     _audit(
       confirmed?'procedure.step_confirmed':'procedure.step_reopened',
-      '${r.procedureTitle} · ${x.stepTitle.isEmpty?stepId:x.stepTitle}',
+      '${r.procedureTitle} · ${x.stepTitle.isEmpty?stepId:x.stepTitle}${x.confirmedBy==null?'':' · ${x.confirmedBy}'}',
       source:'procedure',
       entityId:r.id,
     );
