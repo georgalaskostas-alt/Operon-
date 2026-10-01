@@ -41,6 +41,9 @@ class _S extends State<ProcedureRunScreen> {
                 if (r.pausedAt != null) _meta(t.procedurePausedAt, _stamp(r.pausedAt!)),
                 if (r.cancelledAt != null) _meta(t.procedureCancelledAt, _stamp(r.cancelledAt!)),
                 if (r.completedAt != null) _meta(t.procedureEnded, _stamp(r.completedAt!)),
+                if (r.completedBy != null) _meta(t.completedBy, r.completedBy!),
+                if (r.completionStatement != null)
+                  _meta(t.completionRecord, r.completionStatement!),
                 if (r.equipmentTags.isNotEmpty)
                   _meta(t.procedureLinkedEquipment, r.equipmentTags.join(', ')),
               ],
@@ -139,13 +142,7 @@ class _S extends State<ProcedureRunScreen> {
             FilledButton.icon(
               onPressed: r.state == ProcedureRunState.active &&
                       r.allStepsConfirmed
-                  ? () {
-                      widget.store.setProcedureRunState(
-                        r,
-                        ProcedureRunState.completed,
-                      );
-                      setState(() {});
-                    }
+                  ? () => _completeRun()
                   : null,
               icon: const Icon(Icons.task_alt),
               label: Text(t.completeRun),
@@ -209,6 +206,39 @@ class _S extends State<ProcedureRunScreen> {
               setState(() {});
             },
             child: Text(t.saveNote),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _completeRun() {
+    final t = context.tr;
+    showDialog(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(t.completeRunConfirmTitle),
+        content: Text(t.completeRunConfirmBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c),
+            child: Text(t.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              widget.store.setProcedureRunState(
+                widget.run,
+                ProcedureRunState.completed,
+                completedBy: widget.run.operatorName,
+                completionStatement: t.pick(
+                  'Operator acknowledged final completion of this recorded procedure run against the controlled procedure.',
+                  'Ο χειριστής επιβεβαίωσε την τελική ολοκλήρωση αυτής της καταγεγραμμένης εκτέλεσης σύμφωνα με την ελεγχόμενη διαδικασία.',
+                ),
+              );
+              Navigator.pop(c);
+              setState(() {});
+            },
+            child: Text(t.completeRun),
           ),
         ],
       ),
