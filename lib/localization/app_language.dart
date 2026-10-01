@@ -303,6 +303,10 @@ class OperonStrings {
   String get resume => pick('Resume', 'Συνέχιση');
   String get pause => pick('Pause', 'Παύση');
   String get completeRun => pick('Complete run', 'Ολοκλήρωση εκτέλεσης');
+  String get completeRunConfirmTitle => pick('Complete procedure run?', 'Ολοκλήρωση εκτέλεσης διαδικασίας;');
+  String get completeRunConfirmBody => pick('Confirm that all recorded steps were reviewed and completed according to the controlled procedure. OPERON records your acknowledgement; it does not independently verify plant state, PTW, LOTO or field conditions.', 'Επιβεβαίωσε ότι όλα τα καταγεγραμμένα βήματα ελέγχθηκαν και ολοκληρώθηκαν σύμφωνα με την ελεγχόμενη διαδικασία. Το OPERON καταγράφει την επιβεβαίωσή σου· δεν επαληθεύει ανεξάρτητα την κατάσταση της μονάδας, PTW, LOTO ή τις συνθήκες πεδίου.');
+  String get completedBy => pick('Completed by', 'Ολοκληρώθηκε από');
+  String get completionRecord => pick('Completion record', 'Καταγραφή ολοκλήρωσης');
   String get explicitConfirmation => pick('Explicit confirmation', 'Ρητή επιβεβαίωση');
   String criticalConfirmation(String step) => pick(
     'Confirm only if you personally verified/completed this step according to the controlled procedure:\n\n$step',
