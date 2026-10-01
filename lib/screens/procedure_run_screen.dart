@@ -84,6 +84,19 @@ class _S extends State<ProcedureRunScreen> {
               leading: const Icon(Icons.notes, size: 18),
               title: Text(record.note),
             ),
+          if (record.confirmedBy != null || record.confirmationStatement != null)
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.verified_user_outlined, size: 18),
+              title: Text(
+                record.confirmedBy == null
+                    ? t.confirmationRecord
+                    : '${t.confirmedBy}: ${record.confirmedBy}',
+              ),
+              subtitle: record.confirmationStatement == null
+                  ? null
+                  : Text(record.confirmationStatement!),
+            ),
           if (r.state == ProcedureRunState.active)
             Align(
               alignment: Alignment.centerRight,
@@ -239,7 +252,16 @@ class _S extends State<ProcedureRunScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(c), child: Text(t.cancel)),
           FilledButton(onPressed: () {
-            widget.store.setProcedureStep(widget.run, s.id, true);
+            widget.store.setProcedureStep(
+              widget.run,
+              s.id,
+              true,
+              confirmedBy: widget.run.operatorName,
+              confirmationStatement: t.pick(
+                'Operator explicitly confirmed this safety-critical step against the controlled procedure.',
+                'Ο χειριστής επιβεβαίωσε ρητά αυτό το κρίσιμο για την ασφάλεια βήμα σύμφωνα με την ελεγχόμενη διαδικασία.',
+              ),
+            );
             Navigator.pop(c);
             setState(() {});
           }, child: Text(t.iConfirm)),
