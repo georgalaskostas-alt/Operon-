@@ -298,6 +298,8 @@ class OperonStrings {
   String get safetyCritical => pick('SAFETY-CRITICAL · explicit operator confirmation required', 'ΚΡΙΣΙΜΟ ΓΙΑ ΑΣΦΑΛΕΙΑ · απαιτείται ρητή επιβεβαίωση χειριστή');
   String get notConfirmed => pick('Not confirmed', 'Δεν επιβεβαιώθηκε');
   String get confirmedAt => pick('Confirmed', 'Επιβεβαιώθηκε');
+  String get confirmedBy => pick('Confirmed by', 'Επιβεβαιώθηκε από');
+  String get confirmationRecord => pick('Confirmation record', 'Καταγραφή επιβεβαίωσης');
   String get resume => pick('Resume', 'Συνέχιση');
   String get pause => pick('Pause', 'Παύση');
   String get completeRun => pick('Complete run', 'Ολοκλήρωση εκτέλεσης');
