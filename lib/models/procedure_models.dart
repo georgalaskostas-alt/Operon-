@@ -41,6 +41,8 @@ class StepRecord {
   final bool safetyCritical;
   bool confirmed;
   DateTime? confirmedAt;
+  String? confirmedBy;
+  String? confirmationStatement;
   String note;
   StepRecord({
     required this.stepId,
@@ -48,6 +50,8 @@ class StepRecord {
     this.safetyCritical = false,
     this.confirmed = false,
     this.confirmedAt,
+    this.confirmedBy,
+    this.confirmationStatement,
     this.note = '',
   });
   Map<String, dynamic> toJson() => {
@@ -56,6 +60,8 @@ class StepRecord {
         'safetyCritical': safetyCritical,
         'confirmed': confirmed,
         'confirmedAt': confirmedAt?.toIso8601String(),
+        'confirmedBy': confirmedBy,
+        'confirmationStatement': confirmationStatement,
         'note': note,
       };
   factory StepRecord.fromJson(Map<String, dynamic> j) => StepRecord(
@@ -66,6 +72,8 @@ class StepRecord {
         confirmedAt: j['confirmedAt'] == null
             ? null
             : DateTime.tryParse(j['confirmedAt']),
+        confirmedBy: j['confirmedBy'],
+        confirmationStatement: j['confirmationStatement'],
         note: j['note'] ?? '',
       );
 }
