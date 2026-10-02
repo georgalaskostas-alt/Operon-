@@ -6,6 +6,7 @@ class ScanEntryRecord {
   final String text;
   final String? equipmentTag;
   final double tagConfidence;
+  final bool operatorConfirmedTag;
   final bool approved;
   final String? createdEntityId;
 
@@ -15,6 +16,7 @@ class ScanEntryRecord {
     required this.text,
     this.equipmentTag,
     this.tagConfidence = 0,
+    this.operatorConfirmedTag = false,
     required this.approved,
     this.createdEntityId,
   });
@@ -25,6 +27,7 @@ class ScanEntryRecord {
         'text': text,
         'equipmentTag': equipmentTag,
         'tagConfidence': tagConfidence,
+        'operatorConfirmedTag': operatorConfirmedTag,
         'approved': approved,
         'createdEntityId': createdEntityId,
       };
@@ -38,6 +41,7 @@ class ScanEntryRecord {
         text: j['text'] ?? '',
         equipmentTag: j['equipmentTag'],
         tagConfidence: (j['tagConfidence'] as num?)?.toDouble() ?? 0,
+        operatorConfirmedTag: j['operatorConfirmedTag'] ?? false,
         approved: j['approved'] ?? false,
         createdEntityId: j['createdEntityId'],
       );
