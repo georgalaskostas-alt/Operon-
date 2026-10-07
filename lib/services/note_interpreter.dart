@@ -8,6 +8,7 @@ class ScanDraft {
   String? tag;
   double tagConfidence;
   bool selected;
+  bool operatorConfirmedTag;
 
   ScanDraft(
     this.kind,
@@ -15,6 +16,7 @@ class ScanDraft {
     this.tag,
     this.tagConfidence = 0,
     this.selected = true,
+    this.operatorConfirmedTag = false,
   });
 }
 
