@@ -208,7 +208,8 @@ class _S extends State<ScanNotesScreen> {
                         draft.text = textController.text.trim();
                         draft.kind = kind;
                         draft.tag = tag.isEmpty ? null : tag;
-                        draft.tagConfidence = tag.isEmpty ? 0 : 1;
+                        draft.operatorConfirmedTag = tag.isNotEmpty;
+                        if (tag.isEmpty) draft.tagConfidence = 0;
                       });
                       Navigator.pop(c);
                     },
@@ -274,6 +275,7 @@ class _S extends State<ScanNotesScreen> {
           text: d.text,
           equipmentTag: d.tag,
           tagConfidence: d.tagConfidence,
+          operatorConfirmedTag: d.operatorConfirmedTag,
           approved: d.selected,
           createdEntityId:
               entityId == null || entityId.isEmpty ? null : entityId,
