@@ -39,6 +39,17 @@ class NoteOcrService {
     }
   }
 
+  Future<void> discardUncommittedOriginal(String imagePath) async {
+    if (imagePath.isEmpty) return;
+    final root = await getApplicationSupportDirectory();
+    final originals = Directory(p.join(root.path, 'operon', 'ocr_originals'));
+    final expectedDirectory = p.normalize(originals.absolute.path);
+    final file = File(imagePath);
+    if (p.normalize(file.absolute.parent.path) != expectedDirectory) return;
+    if (!p.basename(imagePath).startsWith('scan_')) return;
+    if (await file.exists()) await file.delete();
+  }
+
   Future<String> _persistOriginal(String sourcePath) async {
     final root = await getApplicationSupportDirectory();
     final dir = Directory(p.join(root.path, 'operon', 'ocr_originals'));
