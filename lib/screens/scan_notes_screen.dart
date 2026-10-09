@@ -125,7 +125,7 @@ class _S extends State<ScanNotesScreen> {
             ),
           ),
           FilledButton.icon(
-            onPressed: _commit,
+            onPressed: drafts.any((d) => d.selected) ? _commit : null,
             icon: const Icon(Icons.verified_user),
             label: Text(t.confirmSelected),
           )
@@ -263,24 +263,25 @@ class _S extends State<ScanNotesScreen> {
       final d = drafts[i];
       String? entityId;
       if (d.selected) {
+        final validatedTag = d.operatorConfirmedTag ? d.tag : null;
         switch (d.kind) {
           case DraftKind.log:
             entityId = widget.store.addScannedLog(
               d.text,
-              tag: d.tag,
+              tag: validatedTag,
               scanId: scanId,
             );
           case DraftKind.action:
             entityId = widget.store.addScannedTask(
               d.text,
-              tag: d.tag,
+              tag: validatedTag,
               scanId: scanId,
             );
           case DraftKind.watch:
             entityId = widget.store.addScannedWatch(
               t.scannedWatchItem,
               d.text,
-              tag: d.tag,
+              tag: validatedTag,
               scanId: scanId,
             );
         }
@@ -290,7 +291,7 @@ class _S extends State<ScanNotesScreen> {
           id: '${scanId}_$i',
           kind: ScanEntryKind.values.byName(d.kind.name),
           text: d.text,
-          equipmentTag: d.tag,
+          equipmentTag: d.operatorConfirmedTag ? d.tag : null,
           tagConfidence: d.tagConfidence,
           operatorConfirmedTag: d.operatorConfirmedTag,
           approved: d.selected,
