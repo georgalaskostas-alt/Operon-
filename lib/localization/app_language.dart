@@ -206,6 +206,9 @@ class OperonStrings {
   String get rejected => pick('REJECTED', 'ΑΠΟΡΡΙΦΘΗΚΕ');
   String get approvedEntries => pick('approved', 'εγκεκριμένες');
   String get tagConfidence => pick('TAG confidence', 'Βεβαιότητα TAG');
+  String get operatorTagVerified => pick('TAG reviewed by operator', 'TAG ελεγμένο από χειριστή');
+  String get tagNotOperatorVerified => pick('TAG not explicitly confirmed', 'TAG χωρίς ρητή επιβεβαίωση');
+  String get machineTagEstimate => pick('Automated TAG match score', 'Βαθμός αυτόματης αντιστοίχισης TAG');
   String get linkedRecord => pick('Linked record', 'Συνδεδεμένη εγγραφή');
   String get noLinkedRecord => pick('No linked record', 'Χωρίς συνδεδεμένη εγγραφή');
   String get scanId => pick('Scan ID', 'ID σάρωσης');
