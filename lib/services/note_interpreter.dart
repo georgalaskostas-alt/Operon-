@@ -58,37 +58,55 @@ class NoteInterpreter {
   }
 
   _Match _matchTag(String line, List<Equipment> equipment) {
-    final normalized = _norm(line);
-    for (final e in equipment) {
-      if (normalized.contains(_norm(e.tag))) return _Match(e.tag, 1);
-    }
+    final tags = equipment
+        .map((e) => e.tag)
+        .where((tag) => tag.isNotEmpty)
+        .toSet()
+        .toList();
+    if (tags.isEmpty) return const _Match(null, 0);
+
     final tokens = line
         .toUpperCase()
-        .split(RegExp(r'\s+'))
+        .split(RegExp(r'[^A-Z0-9-]+'))
         .map(_norm)
-        .where((x) => x.length >= 4);
-    String? best;
-    var score = 0.0;
-    for (final token in tokens) {
-      for (final e in equipment) {
-        final tag = _norm(e.tag);
-        final d = _lev(token, tag);
-        final s =
-            1 - d / (token.length > tag.length ? token.length : tag.length);
-        if (s > score) {
-          score = s;
-          best = e.tag;
-        }
+        .where((token) => token.length >= 4)
+        .toSet();
+
+    final exact = tags
+        .where((tag) => tokens.contains(_norm(tag)))
+        .toList();
+    if (exact.length == 1) return _Match(exact.single, 1);
+    if (exact.length > 1) return const _Match(null, 0);
+
+    final scores = <String, double>{};
+    for (final tag in tags) {
+      final normalizedTag = _norm(tag);
+      if (normalizedTag.length < 4) continue;
+      var best = 0.0;
+      for (final token in tokens) {
+        final length = token.length > normalizedTag.length
+            ? token.length
+            : normalizedTag.length;
+        if ((token.length - normalizedTag.length).abs() > 1) continue;
+        final distance = _lev(token, normalizedTag);
+        final score = 1 - distance / length;
+        if (score > best) best = score;
       }
+      scores[tag] = best;
     }
-    return score >= .72 ? _Match(best, score) : const _Match(null, 0);
+    if (scores.isEmpty) return const _Match(null, 0);
+    final sorted = scores.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final winner = sorted.first;
+    if (winner.value < 0.85) return const _Match(null, 0);
+    if (sorted.length > 1 && winner.value - sorted[1].value < 0.10) {
+      return const _Match(null, 0);
+    }
+    return _Match(winner.key, winner.value);
   }
 
-  String _norm(String s) => s
-      .toUpperCase()
-      .replaceAll(RegExp(r'[^A-Z0-9]'), '')
-      .replaceAll('O', '0')
-      .replaceAll('I', '1');
+  String _norm(String s) =>
+      s.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
 
   int _lev(String a, String b) {
     final p = List<int>.generate(b.length + 1, (i) => i);
