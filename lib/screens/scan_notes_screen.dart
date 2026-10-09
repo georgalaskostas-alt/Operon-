@@ -87,11 +87,42 @@ class _S extends State<ScanNotesScreen> {
                     subtitle: Text(
                       '${_kindLabel(t, d.kind)} · ${d.tag ?? t.noMatchedTag}',
                     ),
-                    secondary: d.tagConfidence < .9
-                        ? const Icon(Icons.warning_amber, color: Colors.orange)
-                        : const Icon(Icons.verified, color: OperonTheme.teal),
+                    secondary: Icon(
+                      d.operatorConfirmedTag && d.tag != null
+                          ? Icons.verified
+                          : d.tag != null
+                              ? Icons.warning_amber
+                              : Icons.link_off,
+                      color: d.operatorConfirmedTag && d.tag != null
+                          ? OperonTheme.teal
+                          : d.tag != null
+                              ? Colors.orange
+                              : Colors.grey,
+                    ),
                   ),
-                  if (d.tagConfidence < .9)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        d.operatorConfirmedTag && d.tag != null
+                            ? t.operatorTagVerified
+                            : d.tag != null
+                                ? t.tagNotOperatorVerified
+                                : t.noEquipmentTag,
+                        style: TextStyle(
+                          color: d.operatorConfirmedTag && d.tag != null
+                              ? OperonTheme.teal
+                              : d.tag != null
+                                  ? Colors.orange
+                                  : Colors.grey,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (d.tagConfidence < .9 && !d.operatorConfirmedTag)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
                       child: Row(
