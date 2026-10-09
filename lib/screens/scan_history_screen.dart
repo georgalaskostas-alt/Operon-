@@ -149,7 +149,8 @@ class ScanHistoryDetailScreen extends StatelessWidget {
         title: Text(e.text),
         subtitle: Text(
           '${_kindLabel(t, e.kind)} · ${e.equipmentTag ?? t.noEquipmentTag}\n'
-          '${t.tagConfidence}: ${(e.tagConfidence * 100).round()}% · '
+          '${t.machineTagEstimate}: ${(e.tagConfidence * 100).round()}% · '
+          '${e.operatorConfirmedTag ? t.operatorTagVerified : t.tagNotOperatorVerified} · '
           '${e.createdEntityId == null ? t.noLinkedRecord : '${t.linkedRecord}: ${e.createdEntityId}'}',
         ),
         isThreeLine: true,
