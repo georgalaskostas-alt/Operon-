@@ -21,6 +21,15 @@ class _S extends State<ScanNotesScreen> {
   bool busy = false;
   String imagePath = '';
   DateTime? scannedAt;
+  bool committed = false;
+
+  @override
+  void dispose() {
+    if (!committed && imagePath.isNotEmpty) {
+      ocr.discardUncommittedOriginal(imagePath);
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext c) {
@@ -226,12 +235,20 @@ class _S extends State<ScanNotesScreen> {
     try {
       final r = await ocr.scan();
       if (r == null) return;
+      if (!mounted) {
+        await ocr.discardUncommittedOriginal(r.imagePath);
+        return;
+      }
+      final previousPath = imagePath;
       setState(() {
         raw = r.text;
         imagePath = r.imagePath;
         scannedAt = DateTime.now();
         drafts = interpreter.interpret(raw, widget.store.equipment);
       });
+      if (previousPath.isNotEmpty && previousPath != r.imagePath) {
+        await ocr.discardUncommittedOriginal(previousPath);
+      }
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -295,6 +312,7 @@ class _S extends State<ScanNotesScreen> {
         reviewedAt: DateTime.now(),
       ),
     );
+    committed = true;
     Navigator.pop(context);
   }
 }
