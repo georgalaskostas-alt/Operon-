@@ -69,7 +69,7 @@ class _ShellState extends State<Shell> {
   Widget build(BuildContext context) {
     final t = context.tr;
     final pages = [
-      DashboardScreen(store: widget.store),
+      DashboardScreen(store: widget.store, onQuickEntry: () => _quick(context)),
       EquipmentScreen(store: widget.store),
       LogbookScreen(store: widget.store),
       WorkspaceScreen(store: widget.store),
