@@ -82,7 +82,7 @@ class _S extends State<DashboardScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Card(
-              color: const Color(0xFF30202C),
+              color: const Color(0xFF2C2630),
               child: ListTile(
                 leading: const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF7684)),
                 title: Text(t.timersDue(due),
@@ -181,7 +181,7 @@ class _S extends State<DashboardScreen> {
   Widget _industrialHero(BuildContext c) {
     final t = c.tr;
     return Container(
-      height: 230,
+      height: 225,
       margin: const EdgeInsets.fromLTRB(20, 14, 20, 12),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -191,11 +191,11 @@ class _S extends State<DashboardScreen> {
           colors: [Color(0xFF102F48), Color(0xFF06111D)]),
       ),
       child: Stack(children: [
-        Positioned.fill(child: CustomPaint(painter: _RefinerySilhouette())),
+        Positioned.fill(child: Image.asset('assets/images/operon_refinery_hero.jpg', fit: BoxFit.cover, alignment: Alignment.center)),
         Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter, end: Alignment.bottomCenter,
-            colors: [Colors.transparent, const Color(0xF006111D)])))),
+            colors: [const Color(0x4206111D), const Color(0xF006111D)])))),
         Padding(
           padding: const EdgeInsets.all(22),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -221,7 +221,7 @@ class _S extends State<DashboardScreen> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: SizedBox(
-          height: 120,
+          height: 104,
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(icon, size: 34, color: OperonTheme.teal),
             const SizedBox(height: 13),
@@ -290,28 +290,3 @@ class _S extends State<DashboardScreen> {
       );
 }
 
-class _RefinerySilhouette extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = const Color(0xFF1C526A);
-    final w = size.width, h = size.height;
-    for (final tower in <(double, double, double)>[
-      (0.10, 0.31, 0.07), (0.27, 0.17, 0.09), (0.48, 0.39, 0.07),
-      (0.67, 0.12, 0.08), (0.83, 0.29, 0.10),
-    ]) {
-      final x = tower.$1 * w, y = tower.$2 * h, width = tower.$3 * w;
-      canvas.drawRect(Rect.fromLTWH(x, y, width, h - y), paint);
-      canvas.drawLine(Offset(x + width / 2, y - 18),
-        Offset(x + width / 2, y), Paint()..color = const Color(0xFF43829A)..strokeWidth = 2);
-      for (double yy = y + 18; yy < h; yy += 24) {
-        canvas.drawLine(Offset(x - 8, yy), Offset(x + width + 8, yy),
-          Paint()..color = const Color(0xFF34738C)..strokeWidth = 3);
-      }
-    }
-    final pipe = Paint()..color = const Color(0xFF34738C)..strokeWidth = 6;
-    canvas.drawLine(Offset(0, h * .77), Offset(w, h * .77), pipe);
-    canvas.drawLine(Offset(0, h * .88), Offset(w, h * .88), pipe);
-  }
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
