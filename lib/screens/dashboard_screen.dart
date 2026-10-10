@@ -15,7 +15,8 @@ import 'timers_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final AppStore store;
-  const DashboardScreen({super.key, required this.store});
+  final VoidCallback? onQuickEntry;
+  const DashboardScreen({super.key, required this.store, this.onQuickEntry});
   @override
   State<DashboardScreen> createState() => _S();
 }
@@ -51,56 +52,50 @@ class _S extends State<DashboardScreen> {
     return RefreshIndicator(
       onRefresh: _timers,
       child: ListView(children: [
-        OperonHeader(t.shiftControl, subtitle: t.attentionNow),
+        _industrialHero(c),
         _shiftCard(c),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(t.pick('What do you need to do?', 'Τι θέλεις να κάνεις;'),
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 12),
-              _primaryAction(
-                c,
-                icon: Icons.edit_note_rounded,
-                title: t.quickEntry,
-                subtitle: t.pick('Record a shift observation', 'Κατάγραψε μια παρατήρηση βάρδιας'),
-                onTap: () => Navigator.push(
-                  c,
-                  MaterialPageRoute(builder: (_) => ActionsScreen(store: widget.store)),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(children: [
-                Expanded(child: _compactAction(
-                  c, icon: Icons.precision_manufacturing_rounded,
-                  title: t.equipment,
-                  onTap: () => Navigator.push(c, MaterialPageRoute(
-                    builder: (_) => EquipmentScreen(store: widget.store)))),
-                ),
-                const SizedBox(width: 10),
-                Expanded(child: _compactAction(
-                  c, icon: Icons.document_scanner_rounded,
-                  title: t.scanNotes,
-                  onTap: () => Navigator.push(c, MaterialPageRoute(
-                    builder: (_) => ScanNotesScreen(store: widget.store)))),
-                ),
-              ]),
-              const SizedBox(height: 10),
-              _primaryAction(
-                c,
-                icon: Icons.handshake_rounded,
-                title: t.handoverShort,
-                subtitle: t.pick('Prepare or review shift handover', 'Ετοίμασε ή έλεγξε την παράδοση βάρδιας'),
-                onTap: () => Navigator.push(c, MaterialPageRoute(
-                  builder: (_) => HandoverScreen(store: widget.store))),
-              ),
-            ],
-          ),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+          child: Row(children: [
+            Expanded(child: _tile(c, Icons.edit_note_rounded, t.pick('Entry', 'Καταχώριση'),
+              widget.onQuickEntry ?? () => Navigator.push(c, MaterialPageRoute(
+                builder: (_) => ActionsScreen(store: widget.store))))),
+            const SizedBox(width: 10),
+            Expanded(child: _tile(c, Icons.document_scanner_rounded, t.pick('Scan', 'Σάρωση'),
+              () => Navigator.push(c, MaterialPageRoute(
+                builder: (_) => ScanNotesScreen(store: widget.store))))),
+          ]),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+          child: Row(children: [
+            Expanded(child: _tile(c, Icons.precision_manufacturing_rounded, t.equipment,
+              () => Navigator.push(c, MaterialPageRoute(
+                builder: (_) => EquipmentScreen(store: widget.store))))),
+            const SizedBox(width: 10),
+            Expanded(child: _tile(c, Icons.handshake_rounded, t.handoverShort,
+              () => Navigator.push(c, MaterialPageRoute(
+                builder: (_) => HandoverScreen(store: widget.store))))),
+          ]),
+        ),
+        if (due > 0)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Card(
+              color: const Color(0xFF30202C),
+              child: ListTile(
+                leading: const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF7684)),
+                title: Text(t.timersDue(due),
+                  style: const TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: Text(t.openTimersAck),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(c, MaterialPageRoute(
+                  builder: (_) => const TimersScreen())).then((_) => _timers()),
+              ),
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
           child: Row(children: [
             _metric(t.open, open.length, Icons.pending_actions),
             const SizedBox(width: 8),
@@ -109,23 +104,6 @@ class _S extends State<DashboardScreen> {
             _metric(t.timers, timers.where((e) => e.active).length, Icons.timer),
           ]),
         ),
-        if (due > 0)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-            child: Card(
-              child: ListTile(
-                leading: const Icon(Icons.notifications_active,
-                    color: Colors.orange),
-                title: Text(t.timersDue(due),
-                    style: const TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: Text(t.openTimersAck),
-                onTap: () => Navigator.push(
-                  c,
-                  MaterialPageRoute(builder: (_) => const TimersScreen()),
-                ).then((_) => _timers()),
-              ),
-            ),
-          ),
         SectionLabel(t.needsAttention),
         ...unavailable.map(
           (e) => ListTile(
@@ -200,55 +178,62 @@ class _S extends State<DashboardScreen> {
     );
   }
 
-  Widget _primaryAction(BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) => Card(
-    margin: EdgeInsets.zero,
-    child: InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(children: [
-          Icon(icon, color: OperonTheme.teal, size: 30),
-          const SizedBox(width: 16),
-          Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 3),
-              Text(subtitle, style: const TextStyle(color: OperonTheme.muted, fontSize: 13)),
-            ],
-          )),
-          const Icon(Icons.chevron_right_rounded, color: OperonTheme.muted),
-        ]),
+  Widget _industrialHero(BuildContext c) {
+    final t = c.tr;
+    return Container(
+      height: 230,
+      margin: const EdgeInsets.fromLTRB(20, 14, 20, 12),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: [Color(0xFF102F48), Color(0xFF06111D)]),
       ),
-    ),
-  );
+      child: Stack(children: [
+        Positioned.fill(child: CustomPaint(painter: _RefinerySilhouette())),
+        Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            colors: [Colors.transparent, const Color(0xF006111D)])))),
+        Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('O P E R O N', style: TextStyle(
+              color: OperonTheme.teal, fontWeight: FontWeight.w900, letterSpacing: 2)),
+            const Spacer(),
+            Text(t.pick('Welcome to your shift', 'Καλώς ήρθες στη βάρδια'),
+              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 5),
+            Text(t.pick('Record • Monitor • Handover',
+                'Καταχώριση • Παρακολούθηση • Παράδοση'),
+              style: const TextStyle(color: Color(0xFFBED1DF), fontSize: 13)),
+          ]),
+        ),
+      ]),
+    );
+  }
 
-  Widget _compactAction(BuildContext context, {
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) => Card(
-    margin: EdgeInsets.zero,
-    child: InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
-        child: Column(children: [
-          Icon(icon, color: OperonTheme.teal, size: 30),
-          const SizedBox(height: 8),
-          Text(title, textAlign: TextAlign.center,
-            style: const TextStyle(fontWeight: FontWeight.w800)),
-        ]),
+  Widget _tile(BuildContext c, IconData icon, String title, VoidCallback onTap) =>
+    Card(
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: SizedBox(
+          height: 120,
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(icon, size: 34, color: OperonTheme.teal),
+            const SizedBox(height: 13),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text(title, textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+            ),
+          ]),
+        ),
       ),
-    ),
-  );
+    );
 
   Widget _shiftCard(BuildContext c) {
     final s = widget.store.currentShift;
@@ -303,4 +288,30 @@ class _S extends State<DashboardScreen> {
           ]),
         ),
       );
+}
+
+class _RefinerySilhouette extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = const Color(0xFF1C526A);
+    final w = size.width, h = size.height;
+    for (final tower in <(double, double, double)>[
+      (0.10, 0.31, 0.07), (0.27, 0.17, 0.09), (0.48, 0.39, 0.07),
+      (0.67, 0.12, 0.08), (0.83, 0.29, 0.10),
+    ]) {
+      final x = tower.$1 * w, y = tower.$2 * h, width = tower.$3 * w;
+      canvas.drawRect(Rect.fromLTWH(x, y, width, h - y), paint);
+      canvas.drawLine(Offset(x + width / 2, y - 18),
+        Offset(x + width / 2, y), Paint()..color = const Color(0xFF43829A)..strokeWidth = 2);
+      for (double yy = y + 18; yy < h; yy += 24) {
+        canvas.drawLine(Offset(x - 8, yy), Offset(x + width + 8, yy),
+          Paint()..color = const Color(0xFF34738C)..strokeWidth = 3);
+      }
+    }
+    final pipe = Paint()..color = const Color(0xFF34738C)..strokeWidth = 6;
+    canvas.drawLine(Offset(0, h * .77), Offset(w, h * .77), pipe);
+    canvas.drawLine(Offset(0, h * .88), Offset(w, h * .88), pipe);
+  }
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
