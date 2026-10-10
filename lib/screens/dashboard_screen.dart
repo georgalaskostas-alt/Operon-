@@ -192,10 +192,10 @@ class _S extends State<DashboardScreen> {
       ),
       child: Stack(children: [
         Positioned.fill(child: Image.asset('assets/images/operon_refinery_hero.jpg', fit: BoxFit.cover, alignment: Alignment.center)),
-        Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(
+        const Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter, end: Alignment.bottomCenter,
-            colors: [const Color(0x4206111D), const Color(0xF006111D)])))),
+            colors: [Color(0x4206111D), Color(0xF006111D)])))),
         Padding(
           padding: const EdgeInsets.all(22),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
