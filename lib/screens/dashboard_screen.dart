@@ -7,6 +7,8 @@ import '../models/operator_timer.dart';
 import '../theme/operon_theme.dart';
 import '../widgets/common.dart';
 import 'actions_screen.dart';
+import 'scan_notes_screen.dart';
+import 'equipment_screen.dart';
 import 'handover_screen.dart';
 import 'shift_session_screen.dart';
 import 'timers_screen.dart';
@@ -51,6 +53,52 @@ class _S extends State<DashboardScreen> {
       child: ListView(children: [
         OperonHeader(t.shiftControl, subtitle: t.attentionNow),
         _shiftCard(c),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(t.pick('What do you need to do?', 'Τι θέλεις να κάνεις;'),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 12),
+              _primaryAction(
+                c,
+                icon: Icons.edit_note_rounded,
+                title: t.quickEntry,
+                subtitle: t.pick('Record a shift observation', 'Κατάγραψε μια παρατήρηση βάρδιας'),
+                onTap: () => Navigator.push(
+                  c,
+                  MaterialPageRoute(builder: (_) => ActionsScreen(store: widget.store)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(child: _compactAction(
+                  c, icon: Icons.precision_manufacturing_rounded,
+                  title: t.equipment,
+                  onTap: () => Navigator.push(c, MaterialPageRoute(
+                    builder: (_) => EquipmentScreen(store: widget.store)))),
+                ),
+                const SizedBox(width: 10),
+                Expanded(child: _compactAction(
+                  c, icon: Icons.document_scanner_rounded,
+                  title: t.scanNotes,
+                  onTap: () => Navigator.push(c, MaterialPageRoute(
+                    builder: (_) => ScanNotesScreen(store: widget.store)))),
+                ),
+              ]),
+              const SizedBox(height: 10),
+              _primaryAction(
+                c,
+                icon: Icons.handshake_rounded,
+                title: t.handoverShort,
+                subtitle: t.pick('Prepare or review shift handover', 'Ετοίμασε ή έλεγξε την παράδοση βάρδιας'),
+                onTap: () => Navigator.push(c, MaterialPageRoute(
+                  builder: (_) => HandoverScreen(store: widget.store))),
+              ),
+            ],
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(children: [
@@ -151,6 +199,56 @@ class _S extends State<DashboardScreen> {
       ]),
     );
   }
+
+  Widget _primaryAction(BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) => Card(
+    margin: EdgeInsets.zero,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Row(children: [
+          Icon(icon, color: OperonTheme.teal, size: 30),
+          const SizedBox(width: 16),
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 3),
+              Text(subtitle, style: const TextStyle(color: OperonTheme.muted, fontSize: 13)),
+            ],
+          )),
+          const Icon(Icons.chevron_right_rounded, color: OperonTheme.muted),
+        ]),
+      ),
+    ),
+  );
+
+  Widget _compactAction(BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) => Card(
+    margin: EdgeInsets.zero,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+        child: Column(children: [
+          Icon(icon, color: OperonTheme.teal, size: 30),
+          const SizedBox(height: 8),
+          Text(title, textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w800)),
+        ]),
+      ),
+    ),
+  );
 
   Widget _shiftCard(BuildContext c) {
     final s = widget.store.currentShift;
