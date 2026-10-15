@@ -47,6 +47,9 @@ class _OperationsCenterScreenState extends State<OperationsCenterScreen> {
         ],
       ),
     );
+    // Dialog exit animation may still own the TextField for this frame.
+    // Dispose only after the route has finished its reverse transition.
+    await Future<void>.delayed(const Duration(milliseconds: 350));
     controller.dispose();
     if (!mounted || title == null || title.isEmpty) return;
     setState(() {
@@ -70,6 +73,8 @@ class _OperationsCenterScreenState extends State<OperationsCenterScreen> {
         ],
       ),
     );
+    // Keep the controller alive until the dialog reverse animation ends.
+    await Future<void>.delayed(const Duration(milliseconds: 350));
     controller.dispose();
     if (!mounted || note == null || note.isEmpty) return;
     try {
