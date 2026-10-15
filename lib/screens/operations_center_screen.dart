@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../enterprise/operations_workflow.dart';
 import '../enterprise/workflow_repository.dart';
+import '../enterprise/workflow_local_storage.dart';
 import '../theme/operon_theme.dart';
 
 /// Local demonstration only: role switching does not authenticate the user.
@@ -15,6 +16,36 @@ class _OperationsCenterScreenState extends State<OperationsCenterScreen> {
   final WorkflowRepository repository = WorkflowRepository();
   OperonRole role = OperonRole.operator;
   int sequence = 0;
+  final WorkflowLocalStorage storage = WorkflowLocalStorage();
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    restoreItems();
+  }
+
+  Future<void> restoreItems() async {
+    try {
+      final saved = await storage.load();
+      if (!mounted) return;
+      setState(() { repository.restore(saved); loading = false; });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not load saved tasks: $error')));
+    }
+  }
+
+  Future<void> persistItems() async {
+    try {
+      await storage.save(repository);
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save task: $error')));
+    }
+  }
 
   String roleName(OperonRole r) => switch (r) {
     OperonRole.operator => 'Operator / Χειριστής',
@@ -57,6 +88,7 @@ class _OperationsCenterScreenState extends State<OperationsCenterScreen> {
       repository.submit(id: 'DEMO-${DateTime.now().microsecondsSinceEpoch}-$sequence',
         title: title, createdBy: 'Demo Operator');
     });
+    await persistItems();
   }
 
   Future<void> changeState(WorkflowItem item, WorkflowState next) async {
@@ -80,6 +112,7 @@ class _OperationsCenterScreenState extends State<OperationsCenterScreen> {
     try {
       setState(() => repository.advance(item.id, next, role,
         note: note, expectedRevision: item.history.length));
+      await persistItems();
     } on StateError catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     }
@@ -94,13 +127,13 @@ class _OperationsCenterScreenState extends State<OperationsCenterScreen> {
     final queue = repository.queueFor(role);
     return Scaffold(
       appBar: AppBar(title: const Text('Operations Center')),
-      floatingActionButton: role == OperonRole.operator
+      floatingActionButton: !loading && role == OperonRole.operator
           ? FloatingActionButton.extended(onPressed: addItem,
               icon: const Icon(Icons.add), label: const Text('New task'))
           : null,
-      body: ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 100), children: [
+      body: loading ? const Center(child: CircularProgressIndicator()) : ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 100), children: [
         const Card(child: Padding(padding: EdgeInsets.all(14),
-          child: Text('DEMO MODE — local only. Role switching is simulated. No shared data or real approvals.',
+          child: Text('DEMO MODE — saved on this device only. Role switching is simulated. No shared data or real approvals.',
             style: TextStyle(color: OperonTheme.muted)))),
         const SizedBox(height: 10),
         DropdownButtonFormField<OperonRole>(
