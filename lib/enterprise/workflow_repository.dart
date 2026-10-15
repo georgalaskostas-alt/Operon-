@@ -16,6 +16,15 @@ class WorkflowRepository {
 
   WorkflowItem? find(String id) => _items[id];
 
+  void restore(Iterable<WorkflowItem> saved) {
+    final restored = <String, WorkflowItem>{};
+    for (final item in saved) {
+      if (restored.containsKey(item.id)) throw StateError('Duplicate saved item id');
+      restored[item.id] = item;
+    }
+    _items..clear()..addAll(restored);
+  }
+
   WorkflowItem submit({
     required String id,
     required String title,
