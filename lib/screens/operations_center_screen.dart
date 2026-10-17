@@ -42,8 +42,10 @@ class _OperationsCenterScreenState extends State<OperationsCenterScreen> {
     try {
       await storage.save(repository);
     } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save task: $error')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not save task: $error')));
+      }
     }
   }
 
