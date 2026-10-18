@@ -16,6 +16,7 @@ dependencies:
   google_mlkit_text_recognition: ^0.15.0
   flutter_local_notifications: ^19.4.2
   timezone: ^0.10.1
+  supabase_flutter: ^2.18.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
