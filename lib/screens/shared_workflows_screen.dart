@@ -34,6 +34,42 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     }
   }
 
+  Future<void> submitWorkflow() async {
+    if (loading || selectedUnit == null) return;
+    final controller = TextEditingController();
+    final title = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('New shared workflow'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 250,
+          decoration: const InputDecoration(labelText: 'Title'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
+            child: const Text('Create')),
+        ],
+      ),
+    );
+    if (!mounted || title == null || title.isEmpty) return;
+    setState(() { loading = true; error = null; });
+    try {
+      await OperonCloud.client.rpc('operon_submit_workflow', params: {
+        'p_unit_id': selectedUnit,
+        'p_title': title,
+      });
+    } catch (e) {
+      if (mounted) setState(() => error = 'Unable to submit workflow: $e');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+    await load();
+  }
+
   @override
   void initState() { super.initState(); load(); }
 
@@ -61,6 +97,12 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
                   onChanged: loading ? null : (value) { setState(() => selectedUnit = value); load(); },
                 ),
                 Text('Roles: ${roles.join(', ')}'),
+                if (roles.contains('operator'))
+                  FilledButton.icon(
+                    onPressed: loading ? null : submitWorkflow,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Create shared workflow'),
+                  ),
                 for (final task in tasks)
                   Card(child: ListTile(title: Text(task['title'] as String),
                     subtitle: Text('${task['state']} · revision ${task['revision']}'))),
