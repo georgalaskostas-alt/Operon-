@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'data/app_store.dart';
+import 'enterprise/operon_cloud.dart';
 import 'localization/app_language.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/equipment_screen.dart';
@@ -13,6 +14,7 @@ import 'screens/quick_entry_review_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await OperonCloud.initialize();
   await NotificationService.instance.initialize();
   runApp(const OperonApp());
 }
