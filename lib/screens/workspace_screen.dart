@@ -6,6 +6,7 @@ import '../widgets/common.dart';
 import 'actions_screen.dart';
 import 'operations_center_screen.dart';
 import 'operon_account_screen.dart';
+import 'shared_workflows_screen.dart';
 import 'ai_screen.dart';
 import 'handover_screen.dart';
 import 'notes_screen.dart';
@@ -27,6 +28,8 @@ class WorkspaceScreen extends StatelessWidget {
         OperonHeader(t.workspace, subtitle: t.workspaceSubtitle),
         _t(c, Icons.account_circle_outlined, 'OPERON Account', 'Optional development cloud sign-in',
             const OperonAccountScreen()),
+        _t(c, Icons.cloud_outlined, 'Shared Workflows', 'Live unit tasks (read-only prototype)',
+            const SharedWorkflowsScreen()),
         _t(c, Icons.hub_rounded, 'Operations Center', 'Demo approvals and role queues',
             const OperationsCenterScreen()),
         _t(c, Icons.pending_actions, t.pendingActions, t.pendingActionsSub,
