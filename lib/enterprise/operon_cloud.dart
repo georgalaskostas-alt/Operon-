@@ -5,9 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Without both --dart-define values the existing offline app stays unchanged.
 class OperonCloud {
   static const url = String.fromEnvironment('OPERON_SUPABASE_URL');
-  static const anonKey = String.fromEnvironment('OPERON_SUPABASE_ANON_KEY');
+  static const publishableKey = String.fromEnvironment('OPERON_SUPABASE_PUBLISHABLE_KEY');
 
-  static bool get configured => url.isNotEmpty && anonKey.isNotEmpty;
+  static bool get configured => url.isNotEmpty && publishableKey.isNotEmpty;
   static bool get available => configured && Supabase.instance.client.auth.currentSession != null;
 
   static Future<void> initialize() async {
@@ -15,7 +15,7 @@ class OperonCloud {
       debugPrint('OPERON: offline mode (cloud configuration absent).');
       return;
     }
-    await Supabase.initialize(url: url, anonKey: anonKey);
+    await Supabase.initialize(url: url, publishableKey: publishableKey);
   }
 
   static SupabaseClient get client {
