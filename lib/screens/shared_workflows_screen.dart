@@ -70,6 +70,74 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     await load();
   }
 
+
+  List<String> allowedNextStates(Map<String, dynamic> task, Set<String> roles) {
+    final state = task['state'] as String;
+    if (state == 'submitted' && roles.contains('foreman')) {
+      return ['foremanReview', 'returned'];
+    }
+    if (state == 'foremanReview' && roles.contains('foreman')) {
+      return ['coordinatorReview', 'returned'];
+    }
+    if (state == 'coordinatorReview' && roles.contains('coordinator')) {
+      return ['managementReview', 'returned'];
+    }
+    if (state == 'managementReview' &&
+        (roles.contains('supervisor') || roles.contains('unitEngineer'))) {
+      return ['completed', 'returned'];
+    }
+    if (state == 'returned' &&
+        roles.contains('operator') &&
+        task['created_by'] == OperonCloud.client.auth.currentUser?.id) {
+      return ['submitted'];
+    }
+    return [];
+  }
+
+  Future<void> transitionWorkflow(Map<String, dynamic> task, String next) async {
+    if (loading) return;
+    final controller = TextEditingController();
+    final note = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Move to $next'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 2000,
+          maxLines: 3,
+          decoration: const InputDecoration(labelText: 'Required audit note'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () {
+              final value = controller.text.trim();
+              if (value.isNotEmpty) Navigator.pop(dialogContext, value);
+            },
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || note == null || note.isEmpty) return;
+    setState(() { loading = true; error = null; });
+    try {
+      await OperonCloud.client.rpc('operon_transition_workflow', params: {
+        'p_workflow_id': task['id'],
+        'p_expected_revision': task['revision'],
+        'p_next_state': next,
+        'p_note': note,
+      });
+    } catch (e) {
+      if (mounted) setState(() => error = 'Transition failed: $e');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+    await load();
+  }
+
   @override
   void initState() { super.initState(); load(); }
 
@@ -104,8 +172,15 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
                     label: const Text('Create shared workflow'),
                   ),
                 for (final task in tasks)
-                  Card(child: ListTile(title: Text(task['title'] as String),
-                    subtitle: Text('${task['state']} · revision ${task['revision']}'))),
+                  Card(child: Column(children: [
+                    ListTile(title: Text(task['title'] as String),
+                      subtitle: Text('${task['state']} · revision ${task['revision']}')),
+                    for (final next in allowedNextStates(task, roles))
+                      TextButton(
+                        onPressed: loading ? null : () => transitionWorkflow(task, next),
+                        child: Text('Move to $next'),
+                      ),
+                  ])),
               ],
             ]),
     );
