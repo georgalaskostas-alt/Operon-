@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../enterprise/operon_cloud.dart';
 
 class SharedWorkflowsScreen extends StatefulWidget {
@@ -17,6 +18,8 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
   String? selectedUnit;
   String? error;
   bool loading = false;
+  RealtimeChannel? workflowChannel;
+  String? subscribedUnit;
 
   Future<void> load() async {
     if (!OperonCloud.configured || !OperonCloud.available) return;
@@ -40,6 +43,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
       final actionable = rows.where((task) =>
           allowedNextStates(task, rolesForUnit).isNotEmpty).length;
       if (mounted) {
+        watchUnit(unit);
         setState(() {
         units = memberships;
         unitNames = names;
@@ -59,6 +63,44 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     } finally {
       if (mounted) setState(() => loading = false);
     }
+  }
+
+  void watchUnit(String? unit) {
+    if (unit == subscribedUnit) return;
+    final oldChannel = workflowChannel;
+    workflowChannel = null;
+    subscribedUnit = unit;
+    if (oldChannel != null) {
+      OperonCloud.client.removeChannel(oldChannel);
+    }
+    if (unit == null) return;
+    workflowChannel = OperonCloud.client
+        .channel('operon-workflows-$unit')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'operon_workflows',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'unit_id',
+            value: unit,
+          ),
+          callback: (_) {
+            if (mounted && !loading) {
+              load();
+            }
+          },
+        )
+        .subscribe();
+  }
+
+  @override
+  void dispose() {
+    final channel = workflowChannel;
+    if (channel != null) {
+      OperonCloud.client.removeChannel(channel);
+    }
+    super.dispose();
   }
 
   void openMyQueue() {
