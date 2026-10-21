@@ -39,7 +39,8 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
           .map((m) => m['role'] as String).toSet();
       final actionable = rows.where((task) =>
           allowedNextStates(task, rolesForUnit).isNotEmpty).length;
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         units = memberships;
         unitNames = names;
         selectedUnit = unit;
@@ -51,7 +52,8 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
           queueNotice = null;
         }
         previousActionableCount = actionable;
-      });
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => error = 'Cloud request failed: $e');
     } finally {
