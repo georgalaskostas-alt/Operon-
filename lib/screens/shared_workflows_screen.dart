@@ -10,6 +10,8 @@ class SharedWorkflowsScreen extends StatefulWidget {
 class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
   List<Map<String, dynamic>> units = [];
   List<Map<String, dynamic>> tasks = [];
+  Map<String, String> unitNames = {};
+  String filter = 'pending';
   String? selectedUnit;
   String? error;
   bool loading = false;
@@ -23,10 +25,15 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
         await db.from('operon_memberships').select('unit_id,role').eq('active', true));
       final unit = memberships.any((m) => m['unit_id'] == selectedUnit)
           ? selectedUnit : (memberships.isEmpty ? null : memberships.first['unit_id'] as String);
+      final ids = memberships.map((m) => m['unit_id'] as String).toSet().toList();
+      final unitRows = ids.isEmpty ? <Map<String, dynamic>>[] :
+          List<Map<String, dynamic>>.from(await db.from('operon_units')
+            .select('id,name').inFilter('id', ids));
+      final names = {for (final row in unitRows) row['id'] as String: row['name'] as String};
       final rows = unit == null ? <Map<String, dynamic>>[] :
           List<Map<String, dynamic>>.from(await db.from('operon_workflows')
             .select('id,title,state,revision,created_by').eq('unit_id', unit));
-      if (mounted) setState(() { units = memberships; selectedUnit = unit; tasks = rows; });
+      if (mounted) setState(() { units = memberships; unitNames = names; selectedUnit = unit; tasks = rows; });
     } catch (e) {
       if (mounted) setState(() => error = 'Cloud request failed: $e');
     } finally {
@@ -138,6 +145,56 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     await load();
   }
 
+
+  String stateLabel(String state) {
+    switch (state) {
+      case 'submitted': return 'Υποβλήθηκε';
+      case 'foremanReview': return 'Έλεγχος εργοδηγού';
+      case 'coordinatorReview': return 'Έλεγχος συντονιστή';
+      case 'managementReview': return 'Τελική έγκριση';
+      case 'completed': return 'Ολοκληρώθηκε';
+      case 'returned': return 'Επιστράφηκε';
+      default: return state;
+    }
+  }
+
+  Future<void> showHistory(Map<String, dynamic> task) async {
+    if (loading) return;
+    try {
+      final rows = List<Map<String, dynamic>>.from(
+        await OperonCloud.client.from('operon_workflow_events')
+          .select('actor_role,from_state,to_state,note,revision,created_at')
+          .eq('workflow_id', task['id'] as String)
+          .order('revision', ascending: true));
+      if (!mounted) return;
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (sheetContext) => SafeArea(child: FractionallySizedBox(
+          heightFactor: 0.75,
+          child: ListView(padding: const EdgeInsets.all(20), children: [
+            Text(task['title'] as String, style: Theme.of(sheetContext).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            const Text('Ιστορικό εγκρίσεων / Approval history'),
+            if (rows.isEmpty) const Padding(
+              padding: EdgeInsets.all(20), child: Text('Δεν υπάρχουν ακόμη αλλαγές κατάστασης.')),
+            for (final event in rows)
+              Card(child: ListTile(
+                title: Text('${stateLabel(event['from_state'] as String)} → ${stateLabel(event['to_state'] as String)}'),
+                subtitle: Text(
+                  'Revision ${event['revision']} · ${event['actor_role']}\n'
+                  '${event['created_at']}\n${event['note']}'),
+                isThreeLine: true,
+              )),
+          ]),
+        )),
+      );
+    } catch (e) {
+      if (mounted) setState(() => error = 'Unable to load history: $e');
+    }
+  }
+
   @override
   void initState() { super.initState(); load(); }
 
@@ -161,20 +218,38 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
                 DropdownButton<String>(
                   isExpanded: true, value: selectedUnit,
                   items: units.map((m) => m['unit_id'] as String).toSet()
-                    .map((id) => DropdownMenuItem(value: id, child: Text('Unit: $id'))).toList(),
+                    .map((id) => DropdownMenuItem(value: id, child: Text(unitNames[id] ?? id))).toList(),
                   onChanged: loading ? null : (value) { setState(() => selectedUnit = value); load(); },
                 ),
-                Text('Roles: ${roles.join(', ')}'),
+                Text('Ρόλοι / Roles: ${roles.join(', ')}'),
+                const SizedBox(height: 12),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'pending', label: Text('Εκκρεμείς')),
+                    ButtonSegment(value: 'all', label: Text('Όλες')),
+                    ButtonSegment(value: 'completed', label: Text('Κλειστές')),
+                  ],
+                  selected: {filter},
+                  onSelectionChanged: (value) => setState(() => filter = value.first),
+                ),
+                const SizedBox(height: 12),
                 if (roles.contains('operator'))
                   FilledButton.icon(
                     onPressed: loading ? null : submitWorkflow,
                     icon: const Icon(Icons.add),
                     label: const Text('Create shared workflow'),
                   ),
-                for (final task in tasks)
+                for (final task in tasks.where((task) =>
+                  filter == 'all' ||
+                  (filter == 'completed' && task['state'] == 'completed') ||
+                  (filter == 'pending' && task['state'] != 'completed')))
                   Card(child: Column(children: [
-                    ListTile(title: Text(task['title'] as String),
-                      subtitle: Text('${task['state']} · revision ${task['revision']}')),
+                    ListTile(
+                      title: Text(task['title'] as String),
+                      subtitle: Text('${stateLabel(task['state'] as String)} · revision ${task['revision']}'),
+                      trailing: const Icon(Icons.history),
+                      onTap: () => showHistory(task),
+                    ),
                     for (final next in allowedNextStates(task, roles))
                       TextButton(
                         onPressed: loading ? null : () => transitionWorkflow(task, next),
