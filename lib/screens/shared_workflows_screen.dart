@@ -11,7 +11,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
   List<Map<String, dynamic>> units = [];
   List<Map<String, dynamic>> tasks = [];
   Map<String, String> unitNames = {};
-  String filter = 'pending';
+  String filter = 'mine';
   String? selectedUnit;
   String? error;
   bool loading = false;
@@ -158,6 +158,26 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     }
   }
 
+  String displayDate(Object? raw) {
+    final date = DateTime.tryParse(raw?.toString() ?? '');
+    if (date == null) return 'Άγνωστη ημερομηνία';
+    final local = date.toLocal();
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(local.day)}/${two(local.month)}/${local.year} '
+        '${two(local.hour)}:${two(local.minute)}';
+  }
+
+  String roleLabel(String role) {
+    switch (role) {
+      case 'operator': return 'Χειριστής';
+      case 'foreman': return 'Εργοδηγός';
+      case 'coordinator': return 'Συντονιστής';
+      case 'supervisor': return 'Προϊστάμενος';
+      case 'unitEngineer': return 'Μηχανικός μονάδας';
+      default: return role;
+    }
+  }
+
   Future<void> showHistory(Map<String, dynamic> task) async {
     if (loading) return;
     try {
@@ -225,6 +245,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
                 const SizedBox(height: 12),
                 SegmentedButton<String>(
                   segments: const [
+                    ButtonSegment(value: 'mine', label: Text('Δικές μου')),
                     ButtonSegment(value: 'pending', label: Text('Εκκρεμείς')),
                     ButtonSegment(value: 'all', label: Text('Όλες')),
                     ButtonSegment(value: 'completed', label: Text('Κλειστές')),
@@ -233,6 +254,12 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
                   onSelectionChanged: (value) => setState(() => filter = value.first),
                 ),
                 const SizedBox(height: 12),
+                if (filter == 'mine' && !tasks.any((task) =>
+                    allowedNextStates(task, roles).isNotEmpty))
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(child: Text('Δεν υπάρχουν εργασίες που απαιτούν δική σας ενέργεια.')),
+                  ),
                 if (roles.contains('operator'))
                   FilledButton.icon(
                     onPressed: loading ? null : submitWorkflow,
@@ -240,6 +267,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
                     label: const Text('Create shared workflow'),
                   ),
                 for (final task in tasks.where((task) =>
+                  (filter == 'mine' && allowedNextStates(task, roles).isNotEmpty) ||
                   filter == 'all' ||
                   (filter == 'completed' && task['state'] == 'completed') ||
                   (filter == 'pending' && task['state'] != 'completed')))
