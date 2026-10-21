@@ -12,6 +12,8 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
   List<Map<String, dynamic>> tasks = [];
   Map<String, String> unitNames = {};
   String filter = 'mine';
+  int? previousActionableCount;
+  String? queueNotice;
   String? selectedUnit;
   String? error;
   bool loading = false;
@@ -33,12 +35,35 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
       final rows = unit == null ? <Map<String, dynamic>>[] :
           List<Map<String, dynamic>>.from(await db.from('operon_workflows')
             .select('id,title,state,revision,created_by').eq('unit_id', unit));
-      if (mounted) setState(() { units = memberships; unitNames = names; selectedUnit = unit; tasks = rows; });
+      final rolesForUnit = memberships.where((m) => m['unit_id'] == unit)
+          .map((m) => m['role'] as String).toSet();
+      final actionable = rows.where((task) =>
+          allowedNextStates(task, rolesForUnit).isNotEmpty).length;
+      if (mounted) setState(() {
+        units = memberships;
+        unitNames = names;
+        selectedUnit = unit;
+        tasks = rows;
+        if (previousActionableCount != null && actionable > previousActionableCount!) {
+          queueNotice = 'Νέα εργασία προς ενέργεια: '
+              '${actionable - previousActionableCount!}';
+        } else {
+          queueNotice = null;
+        }
+        previousActionableCount = actionable;
+      });
     } catch (e) {
       if (mounted) setState(() => error = 'Cloud request failed: $e');
     } finally {
       if (mounted) setState(() => loading = false);
     }
+  }
+
+  void openMyQueue() {
+    setState(() {
+      filter = 'mine';
+      queueNotice = null;
+    });
   }
 
   Future<void> submitWorkflow() async {
@@ -242,6 +267,8 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
   Widget build(BuildContext context) {
     final roles = units.where((m) => m['unit_id'] == selectedUnit)
         .map((m) => m['role'] as String).toSet();
+    final myCount = tasks.where((task) =>
+        allowedNextStates(task, roles).isNotEmpty).length;
     return Scaffold(
       appBar: AppBar(title: const Text('Shared Workflows'),
         actions: [IconButton(onPressed: loading ? null : load, icon: const Icon(Icons.refresh))]),
@@ -253,13 +280,25 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
               const Text('Development data only. Local tasks are not uploaded.'),
               if (loading) const LinearProgressIndicator(),
               if (error != null) Text(error!),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.notifications_active_outlined),
+                  title: Text('Οι εκκρεμότητές μου: $myCount'),
+                  subtitle: Text(queueNotice ??
+                      (myCount == 0
+                          ? 'Δεν απαιτείται ενέργεια από τον ρόλο σας.'
+                          : 'Υπάρχουν εργασίες που χρειάζονται ενέργεια.')),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: openMyQueue,
+                ),
+              ),
               if (units.isEmpty && !loading) const Text('No unit membership assigned by administrator.'),
               if (selectedUnit != null) ...[
                 DropdownButton<String>(
                   isExpanded: true, value: selectedUnit,
                   items: units.map((m) => m['unit_id'] as String).toSet()
                     .map((id) => DropdownMenuItem(value: id, child: Text(unitNames[id] ?? id))).toList(),
-                  onChanged: loading ? null : (value) { setState(() => selectedUnit = value); load(); },
+                  onChanged: loading ? null : (value) { setState(() { selectedUnit = value; previousActionableCount = null; queueNotice = null; }); load(); },
                 ),
                 Text('Ρόλοι / Roles: ${roles.join(', ')}'),
                 const SizedBox(height: 12),
