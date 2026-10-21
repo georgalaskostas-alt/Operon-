@@ -56,7 +56,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel')),
+            child: const Text('Ακύρωση')),
           FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
             child: const Text('Create')),
         ],
@@ -101,19 +101,39 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     return [];
   }
 
+  String actionLabel(String current, String next) {
+    if (current == 'submitted' && next == 'foremanReview') {
+      return 'Ανάληψη για έλεγχο';
+    }
+    if (current == 'foremanReview' && next == 'coordinatorReview') {
+      return 'Ολοκλήρωση ελέγχου · Προώθηση στον Συντονιστή';
+    }
+    if (current == 'coordinatorReview' && next == 'managementReview') {
+      return 'Προώθηση για τελική έγκριση';
+    }
+    if (current == 'managementReview' && next == 'completed') {
+      return 'Τελική έγκριση · Ολοκλήρωση';
+    }
+    if (next == 'returned') return 'Επιστροφή στον Χειριστή';
+    if (current == 'returned' && next == 'submitted') {
+      return 'Επανυποβολή εργασίας';
+    }
+    return stateLabel(next);
+  }
+
   Future<void> transitionWorkflow(Map<String, dynamic> task, String next) async {
     if (loading) return;
     final controller = TextEditingController();
     final note = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('Move to $next'),
+        title: Text(actionLabel(task['state'] as String, next)),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLength: 2000,
           maxLines: 3,
-          decoration: const InputDecoration(labelText: 'Required audit note'),
+          decoration: const InputDecoration(labelText: 'Υποχρεωτικό σχόλιο'),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext),
@@ -123,7 +143,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
               final value = controller.text.trim();
               if (value.isNotEmpty) Navigator.pop(dialogContext, value);
             },
-            child: const Text('Confirm'),
+            child: const Text('Επιβεβαίωση'),
           ),
         ],
       ),
@@ -281,7 +301,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
                     for (final next in allowedNextStates(task, roles))
                       TextButton(
                         onPressed: loading ? null : () => transitionWorkflow(task, next),
-                        child: Text('Move to $next'),
+                        child: Text(actionLabel(task['state'] as String, next)),
                       ),
                   ])),
               ],
