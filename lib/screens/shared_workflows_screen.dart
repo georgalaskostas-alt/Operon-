@@ -103,6 +103,119 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     super.dispose();
   }
 
+  Future<void> showShiftHandovers() async {
+    final unit = selectedUnit;
+    if (unit == null || loading) return;
+    try {
+      final records = List<Map<String, dynamic>>.from(
+        await OperonCloud.client.from('operon_shift_handovers')
+            .select('shift_date,shift_name,summary,created_at')
+            .eq('unit_id', unit)
+            .order('created_at', ascending: false)
+            .limit(30));
+      if (!mounted) return;
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (ctx) => SafeArea(child: FractionallySizedBox(
+          heightFactor: 0.75,
+          child: ListView(padding: const EdgeInsets.all(16), children: [
+            Text('Παραδόσεις βάρδιας',
+                style: Theme.of(ctx).textTheme.titleLarge),
+            if (records.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('Δεν υπάρχουν ακόμη παραδόσεις βάρδιας.')),
+            for (final record in records)
+              Card(child: ListTile(
+                title: Text('${record['shift_date']} · '
+                    '${shiftLabel(record['shift_name'] as String)}'),
+                subtitle: Text(record['summary'] as String),
+              )),
+          ]),
+        )),
+      );
+    } catch (e) {
+      if (mounted) setState(() => error = 'Αδυναμία φόρτωσης παραδόσεων: $e');
+    }
+  }
+
+  String shiftLabel(String shift) {
+    switch (shift) {
+      case 'morning': return 'Πρωινή';
+      case 'afternoon': return 'Απογευματινή';
+      case 'night': return 'Νυχτερινή';
+      default: return shift;
+    }
+  }
+
+  Future<void> createShiftHandover() async {
+    final unit = selectedUnit;
+    if (unit == null || loading) return;
+    final note = TextEditingController();
+    var shift = 'morning';
+    final today = DateTime.now();
+    final date = '${today.year.toString().padLeft(4, '0')}-'
+        '${today.month.toString().padLeft(2, '0')}-'
+        '${today.day.toString().padLeft(2, '0')}';
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, update) => AlertDialog(
+          title: const Text('Νέα παράδοση βάρδιας'),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text('Ημερομηνία: $date'),
+            DropdownButton<String>(
+              value: shift,
+              isExpanded: true,
+              items: ['morning', 'afternoon', 'night']
+                  .map((value) => DropdownMenuItem(
+                    value: value, child: Text(shiftLabel(value)))).toList(),
+              onChanged: (value) {
+                if (value != null) update(() => shift = value);
+              },
+            ),
+            TextField(
+              controller: note,
+              maxLength: 2000,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: 'Σημειώσεις παράδοσης (δοκιμαστικά δεδομένα)'),
+            ),
+          ]),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx),
+                child: const Text('Ακύρωση')),
+            FilledButton(
+              onPressed: () {
+                if (note.text.trim().isNotEmpty) {
+                  Navigator.pop(ctx, {'shift': shift, 'summary': note.text.trim()});
+                }
+              },
+              child: const Text('Καταχώριση'),
+            ),
+          ],
+        ),
+      ),
+    );
+    note.dispose();
+    if (!mounted || result == null) return;
+    setState(() { loading = true; error = null; });
+    try {
+      await OperonCloud.client.rpc('operon_create_shift_handover', params: {
+        'p_unit_id': unit,
+        'p_shift_date': date,
+        'p_shift_name': result['shift'],
+        'p_summary': result['summary'],
+      });
+    } catch (e) {
+      if (mounted) setState(() => error = 'Αδυναμία καταχώρισης: $e');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
   void openMyQueue() {
     setState(() {
       filter = 'mine';
@@ -345,6 +458,19 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
                   onChanged: loading ? null : (value) { setState(() { selectedUnit = value; previousActionableCount = null; queueNotice = null; }); load(); },
                 ),
                 Text('Ρόλοι / Roles: ${roles.join(', ')}'),
+                const SizedBox(height: 12),
+                Wrap(spacing: 8, children: [
+                  OutlinedButton.icon(
+                    onPressed: loading ? null : showShiftHandovers,
+                    icon: const Icon(Icons.history),
+                    label: const Text('Παραδόσεις βάρδιας'),
+                  ),
+                  FilledButton.icon(
+                    onPressed: loading ? null : createShiftHandover,
+                    icon: const Icon(Icons.note_add_outlined),
+                    label: const Text('Νέα παράδοση'),
+                  ),
+                ]),
                 const SizedBox(height: 12),
                 SegmentedButton<String>(
                   segments: const [
