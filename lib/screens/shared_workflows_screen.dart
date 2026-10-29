@@ -109,7 +109,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     try {
       final records = List<Map<String, dynamic>>.from(
         await OperonCloud.client.from('operon_shift_handovers')
-            .select('shift_date,shift_name,summary,created_at')
+            .select('id,shift_date,shift_name,summary,created_at,operon_handover_workflows(workflow_id,operon_workflows(title,state))')
             .eq('unit_id', unit)
             .order('created_at', ascending: false)
             .limit(30));
@@ -131,7 +131,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
               Card(child: ListTile(
                 title: Text('${record['shift_date']} · '
                     '${shiftLabel(record['shift_name'] as String)}'),
-                subtitle: Text(record['summary'] as String),
+                subtitle: Text('${record['summary']}\n${_linkedSummary(record)}'),\n                isThreeLine: true,
               )),
           ]),
         )),
@@ -141,7 +141,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     }
   }
 
-  String shiftLabel(String shift) {
+  String _linkedSummary(Map<String, dynamic> record) {\n    final links = (record['operon_handover_workflows'] as List?) ?? const [];\n    if (links.isEmpty) return 'Δεν έχουν συνδεθεί εκκρεμότητες.';\n    return 'Συνδεδεμένες εκκρεμότητες: ${links.length}\\n${links.map((e) { final w = e['operon_workflows']; return '• ${w?['title'] ?? 'Άγνωστη εργασία'} (${w?['state'] ?? '—'})'; }).join('\\n')}';\n  }\n\n  String shiftLabel(String shift) {
     switch (shift) {
       case 'morning': return 'Πρωινή';
       case 'afternoon': return 'Απογευματινή';
@@ -154,7 +154,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     final unit = selectedUnit;
     if (unit == null || loading) return;
     final note = TextEditingController();
-    var shift = 'morning';
+    var shift = 'morning';\n    final openTasks = tasks.where((t) => t['state'] != 'completed').toList();\n    final selectedWorkflowIds = <String>{};
     final today = DateTime.now();
     final date = '${today.year.toString().padLeft(4, '0')}-'
         '${today.month.toString().padLeft(2, '0')}-'
@@ -190,7 +190,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
             FilledButton(
               onPressed: () {
                 if (note.text.trim().isNotEmpty) {
-                  Navigator.pop(ctx, {'shift': shift, 'summary': note.text.trim()});
+                  Navigator.pop(ctx, {'shift': shift, 'summary': note.text.trim(),\n                    'workflow_ids': selectedWorkflowIds.join(',')});
                 }
               },
               child: const Text('Καταχώριση'),
@@ -207,7 +207,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
         'p_unit_id': unit,
         'p_shift_date': date,
         'p_shift_name': result['shift'],
-        'p_summary': result['summary'],
+        'p_summary': result['summary'],\n        'p_workflow_ids': (result['workflow_ids'] ?? '').isEmpty\n            ? <String>[] : result['workflow_ids']!.split(','),
       });
     } catch (e) {
       if (mounted) setState(() => error = 'Αδυναμία καταχώρισης: $e');
