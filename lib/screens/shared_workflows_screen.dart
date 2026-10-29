@@ -131,7 +131,8 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
               Card(child: ListTile(
                 title: Text('${record['shift_date']} · '
                     '${shiftLabel(record['shift_name'] as String)}'),
-                subtitle: Text('${record['summary']}\n${_linkedSummary(record)}'),\n                isThreeLine: true,
+                subtitle: Text('${record['summary']}\n${_linkedSummary(record)}'),
+                isThreeLine: true,
               )),
           ]),
         )),
@@ -141,7 +142,13 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     }
   }
 
-  String _linkedSummary(Map<String, dynamic> record) {\n    final links = (record['operon_handover_workflows'] as List?) ?? const [];\n    if (links.isEmpty) return 'Δεν έχουν συνδεθεί εκκρεμότητες.';\n    return 'Συνδεδεμένες εκκρεμότητες: ${links.length}\\n${links.map((e) { final w = e['operon_workflows']; return '• ${w?['title'] ?? 'Άγνωστη εργασία'} (${w?['state'] ?? '—'})'; }).join('\\n')}';\n  }\n\n  String shiftLabel(String shift) {
+  String _linkedSummary(Map<String, dynamic> record) {
+    final links = (record['operon_handover_workflows'] as List?) ?? const [];
+    if (links.isEmpty) return 'Δεν έχουν συνδεθεί εκκρεμότητες.';
+    return 'Συνδεδεμένες εκκρεμότητες: ${links.length}\\n${links.map((e) { final w = e['operon_workflows']; return '• ${w?['title'] ?? 'Άγνωστη εργασία'} (${w?['state'] ?? '—'})'; }).join('\\n')}';
+  }
+
+  String shiftLabel(String shift) {
     switch (shift) {
       case 'morning': return 'Πρωινή';
       case 'afternoon': return 'Απογευματινή';
@@ -154,7 +161,9 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     final unit = selectedUnit;
     if (unit == null || loading) return;
     final note = TextEditingController();
-    var shift = 'morning';\n    final openTasks = tasks.where((t) => t['state'] != 'completed').toList();\n    final selectedWorkflowIds = <String>{};
+    var shift = 'morning';
+    final openTasks = tasks.where((t) => t['state'] != 'completed').toList();
+    final selectedWorkflowIds = <String>{};
     final today = DateTime.now();
     final date = '${today.year.toString().padLeft(4, '0')}-'
         '${today.month.toString().padLeft(2, '0')}-'
@@ -176,6 +185,22 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
                 if (value != null) update(() => shift = value);
               },
             ),
+            if (openTasks.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              const Text('Σύνδεση ανοιχτών εργασιών'),
+              SizedBox(height: 160, child: ListView(shrinkWrap: true, children: [
+                for (final task in openTasks)
+                  CheckboxListTile(
+                    dense: true,
+                    title: Text(task['title'] as String),
+                    value: selectedWorkflowIds.contains(task['id']),
+                    onChanged: (checked) => update(() {
+                      if (checked == true) { selectedWorkflowIds.add(task['id'] as String); }
+                      else { selectedWorkflowIds.remove(task['id']); }
+                    }),
+                  ),
+              ])),
+            ],
             TextField(
               controller: note,
               maxLength: 2000,
@@ -190,7 +215,8 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
             FilledButton(
               onPressed: () {
                 if (note.text.trim().isNotEmpty) {
-                  Navigator.pop(ctx, {'shift': shift, 'summary': note.text.trim(),\n                    'workflow_ids': selectedWorkflowIds.join(',')});
+                  Navigator.pop(ctx, {'shift': shift, 'summary': note.text.trim(),
+                    'workflow_ids': selectedWorkflowIds.join(',')});
                 }
               },
               child: const Text('Καταχώριση'),
@@ -207,7 +233,9 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
         'p_unit_id': unit,
         'p_shift_date': date,
         'p_shift_name': result['shift'],
-        'p_summary': result['summary'],\n        'p_workflow_ids': (result['workflow_ids'] ?? '').isEmpty\n            ? <String>[] : result['workflow_ids']!.split(','),
+        'p_summary': result['summary'],
+        'p_workflow_ids': (result['workflow_ids'] ?? '').isEmpty
+            ? <String>[] : result['workflow_ids']!.split(','),
       });
     } catch (e) {
       if (mounted) setState(() => error = 'Αδυναμία καταχώρισης: $e');
