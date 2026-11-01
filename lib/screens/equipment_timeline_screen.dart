@@ -1,0 +1,336 @@
+import 'package:flutter/material.dart';
+
+import '../data/app_store.dart';
+import '../localization/app_language.dart';
+import '../models/models.dart';
+import '../theme/operon_theme.dart';
+import 'scan_history_screen.dart';
+
+enum _TimelineKind { state, log, action, watch, note, scan, audit }
+
+class EquipmentTimelineScreen extends StatefulWidget {
+  final AppStore store;
+  final Equipment equipment;
+  const EquipmentTimelineScreen({
+    super.key,
+    required this.store,
+    required this.equipment,
+  });
+
+  @override
+  State<EquipmentTimelineScreen> createState() => _EquipmentTimelineScreenState();
+}
+
+class _EquipmentTimelineScreenState extends State<EquipmentTimelineScreen> {
+  _TimelineKind? filter;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tr;
+    final all = _events(t);
+    final events = filter == null ? all : all.where((e) => e.kind == filter).toList();
+
+    return Scaffold(
+      appBar: AppBar(title: Text('${widget.equipment.tag} · ${t.equipmentTimeline}')),
+      body: Column(
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Row(
+              children: [
+                _chip(t.timelineAll, null),
+                _chip(t.timelineStates, _TimelineKind.state),
+                _chip(t.timelineLogs, _TimelineKind.log),
+                _chip(t.timelineActions, _TimelineKind.action),
+                _chip(t.timelineWatch, _TimelineKind.watch),
+                _chip(t.timelineNotes, _TimelineKind.note),
+                _chip(t.timelineScans, _TimelineKind.scan),
+              ],
+            ),
+          ),
+          Expanded(
+            child: events.isEmpty
+                ? Center(child: Text(t.noEquipmentActivity))
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: events.length,
+                    itemBuilder: (_, i) => _TimelineCard(
+                      event: events[i],
+                      onTap: _onEventTap(events[i]),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  VoidCallback? _onEventTap(_EquipmentEvent event) {
+    if (event.scanId != null) {
+      return () {
+        final scan = widget.store.scanRecords.firstWhere(
+          (s) => s.id == event.scanId,
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ScanHistoryDetailScreen(scan: scan),
+          ),
+        );
+      };
+    }
+    if (event.entityId == null) return null;
+    switch (event.kind) {
+      case _TimelineKind.action:
+        return () {
+          final item = widget.store.tasks.firstWhere((x) => x.id == event.entityId);
+          _showRecordDetails(
+            title: item.title,
+            status: item.state.name,
+            createdAt: item.createdAt,
+            dueAt: item.dueAt,
+            source: item.createdShiftId == null ? 'action' : 'shift ${item.createdShiftId}',
+            id: item.id,
+          );
+        };
+      case _TimelineKind.watch:
+        return () {
+          final item = widget.store.watch.firstWhere((x) => x.id == event.entityId);
+          _showRecordDetails(
+            title: item.title,
+            body: item.detail,
+            status: item.active ? context.tr.activeLabel : context.tr.resolvedLabel,
+            source: 'watch',
+            id: item.id,
+          );
+        };
+      case _TimelineKind.note:
+        return () {
+          final item = widget.store.notes.firstWhere((x) => x.id == event.entityId);
+          _showRecordDetails(
+            title: item.title,
+            body: item.body,
+            status: item.resolved
+                ? context.tr.resolvedLabel
+                : (item.pinned ? context.tr.pinnedLabel : context.tr.activeLabel),
+            createdAt: item.createdAt,
+            source: 'note',
+            id: item.id,
+          );
+        };
+      default:
+        return null;
+    }
+  }
+
+  void _showRecordDetails({
+    required String title,
+    String? body,
+    required String status,
+    DateTime? createdAt,
+    DateTime? dueAt,
+    required String source,
+    required String id,
+  }) {
+    final t = context.tr;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.recordDetails,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 14),
+              Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+              if (body != null && body.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(body),
+              ],
+              const SizedBox(height: 16),
+              _detailLine(t.recordStatus, status),
+              if (createdAt != null) _detailLine(t.recordCreated, _stamp(createdAt)),
+              if (dueAt != null) _detailLine(t.recordDue, _stamp(dueAt)),
+              _detailLine(t.recordSource, source),
+              _detailLine(t.recordId, id),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _detailLine(String label, String value) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text('$label: $value',
+            style: const TextStyle(color: OperonTheme.muted)),
+      );
+
+  Widget _chip(String label, _TimelineKind? value) => Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: ChoiceChip(
+          label: Text(label),
+          selected: filter == value,
+          onSelected: (_) => setState(() => filter = value),
+        ),
+      );
+
+  List<_EquipmentEvent> _events(OperonStrings t) {
+    final tag = widget.equipment.tag;
+    final store = widget.store;
+    final result = <_EquipmentEvent>[];
+
+    for (final x in store.logs.where((x) => x.equipmentTag == tag)) {
+      result.add(_EquipmentEvent(
+        at: x.createdAt,
+        kind: _TimelineKind.log,
+        title: t.logEvent,
+        detail: x.text,
+        source: x.source,
+        icon: Icons.receipt_long,
+      ));
+    }
+
+    for (final x in store.tasks.where((x) => x.equipmentTag == tag)) {
+      result.add(_EquipmentEvent(
+        at: x.createdAt,
+        kind: _TimelineKind.action,
+        title: t.actionEvent,
+        detail: '${x.title} · ${x.state.name}',
+        source: x.createdShiftId == null ? 'action' : 'shift ${x.createdShiftId}',
+        icon: Icons.pending_actions,
+        entityId: x.id,
+      ));
+    }
+
+    for (final x in store.watch.where((x) => x.equipmentTag == tag)) {
+      final created = store.auditEvents
+          .where((a) => a.entityId == x.id && a.type == 'watch.created')
+          .map((a) => a.createdAt)
+          .firstOrNull;
+      result.add(_EquipmentEvent(
+        at: created ?? DateTime.fromMillisecondsSinceEpoch(0),
+        kind: _TimelineKind.watch,
+        title: t.watchEvent,
+        detail: '${x.title}\n${x.detail}',
+        source: x.active ? 'watch' : 'resolved',
+        icon: Icons.visibility,
+        entityId: x.id,
+      ));
+    }
+
+    for (final x in store.notes.where((x) => x.equipmentTag == tag)) {
+      result.add(_EquipmentEvent(
+        at: x.createdAt,
+        kind: _TimelineKind.note,
+        title: t.noteEvent,
+        detail: '${x.title}\n${x.body}',
+        source: x.resolved ? 'resolved' : 'note',
+        icon: Icons.note_alt_outlined,
+        entityId: x.id,
+      ));
+    }
+
+    for (final scan in store.scanRecords) {
+      final entries = scan.entries.where(
+        (e) => e.approved && e.equipmentTag == tag,
+      );
+      for (final entry in entries) {
+        result.add(_EquipmentEvent(
+          at: scan.reviewedAt ?? scan.createdAt,
+          kind: _TimelineKind.scan,
+          title: t.scanEvent,
+          detail: entry.text,
+          source: 'scan ${scan.id}',
+          icon: Icons.document_scanner,
+          scanId: scan.id,
+        ));
+      }
+    }
+
+    for (final x in store.auditEvents.where((x) => x.equipmentTag == tag)) {
+      if (x.type == 'log.created' ||
+          x.type == 'action.created' ||
+          x.type == 'watch.created' ||
+          x.type == 'note.created') {
+        continue;
+      }
+      final kind = x.type == 'equipment.state_changed'
+          ? _TimelineKind.state
+          : x.type.startsWith('action.')
+              ? _TimelineKind.action
+              : x.type.startsWith('watch.')
+                  ? _TimelineKind.watch
+                  : x.type.startsWith('note.')
+                      ? _TimelineKind.note
+                      : _TimelineKind.audit;
+      final isState = kind == _TimelineKind.state;
+      result.add(_EquipmentEvent(
+        at: x.createdAt,
+        kind: kind,
+        title: isState ? t.stateChange : t.auditEvent,
+        detail: x.summary,
+        source: x.source,
+        icon: isState ? Icons.swap_horiz : Icons.verified_user_outlined,
+        entityId: x.entityId,
+      ));
+    }
+
+    result.sort((a, b) => b.at.compareTo(a.at));
+    return result;
+  }
+}
+
+class _EquipmentEvent {
+  final DateTime at;
+  final _TimelineKind kind;
+  final String title, detail, source;
+  final IconData icon;
+  final String? scanId;
+  final String? entityId;
+  const _EquipmentEvent({
+    required this.at,
+    required this.kind,
+    required this.title,
+    required this.detail,
+    required this.source,
+    required this.icon,
+    this.scanId,
+    this.entityId,
+  });
+}
+
+class _TimelineCard extends StatelessWidget {
+  final _EquipmentEvent event;
+  final VoidCallback? onTap;
+  const _TimelineCard({required this.event, this.onTap});
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: ListTile(
+          onTap: onTap,
+          leading: Icon(event.icon, color: OperonTheme.teal),
+          title: Text(
+            event.title,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          subtitle: Text(
+            '${event.detail}\n${_stamp(event.at)} · ${event.source}',
+          ),
+          isThreeLine: true,
+          trailing: onTap == null ? null : const Icon(Icons.chevron_right),
+        ),
+      );
+}
+
+String _stamp(DateTime value) {
+  if (value.millisecondsSinceEpoch == 0) return '—';
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${two(value.day)}/${two(value.month)}/${value.year} '
+      '${two(value.hour)}:${two(value.minute)}';
+}
