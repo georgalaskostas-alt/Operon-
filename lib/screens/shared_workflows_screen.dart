@@ -145,7 +145,13 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
   String _linkedSummary(Map<String, dynamic> record) {
     final links = (record['operon_handover_workflows'] as List?) ?? const [];
     if (links.isEmpty) return 'Δεν έχουν συνδεθεί εκκρεμότητες.';
-    return 'Συνδεδεμένες εκκρεμότητες: ${links.length}\\n${links.map((e) { final w = e['operon_workflows']; return '• ${w?['title'] ?? 'Άγνωστη εργασία'} (${w?['state'] ?? '—'})'; }).join('\\n')}';
+    final lines = links.map((link) {
+      final workflow = link['operon_workflows'] as Map<String, dynamic>?;
+      final title = workflow?['title'] ?? 'Άγνωστη εργασία';
+      final state = workflow?['state'] ?? '—';
+      return '• $title ($state)';
+    }).join('\n');
+    return 'Συνδεδεμένες εκκρεμότητες: ${links.length}\n$lines';
   }
 
   String shiftLabel(String shift) {
@@ -173,7 +179,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, update) => AlertDialog(
           title: const Text('Νέα παράδοση βάρδιας'),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
+          content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
             Text('Ημερομηνία: $date'),
             DropdownButton<String>(
               value: shift,
@@ -208,7 +214,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
               decoration: const InputDecoration(
                 labelText: 'Σημειώσεις παράδοσης (δοκιμαστικά δεδομένα)'),
             ),
-          ]),
+          ])),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx),
                 child: const Text('Ακύρωση')),
