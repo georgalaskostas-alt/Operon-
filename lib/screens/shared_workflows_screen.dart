@@ -109,7 +109,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     try {
       final records = List<Map<String, dynamic>>.from(
         await OperonCloud.client.from('operon_shift_handovers')
-            .select('id,shift_date,shift_name,summary,created_at,operon_handover_workflows(workflow_id,operon_workflows(title,state))')
+            .select('id,created_by,shift_date,shift_name,summary,created_at,operon_handover_workflows(workflow_id,operon_workflows(title,state)),operon_handover_acknowledgements(acknowledged_by,acknowledged_at,note)')
             .eq('unit_id', unit)
             .order('created_at', ascending: false)
             .limit(30));
@@ -131,8 +131,17 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
               Card(child: ListTile(
                 title: Text('${record['shift_date']} · '
                     '${shiftLabel(record['shift_name'] as String)}'),
-                subtitle: Text('${record['summary']}\n${_linkedSummary(record)}'),
+                subtitle: Text('${record['summary']}\n${_linkedSummary(record)}\n'
+                    '${_acknowledgementSummary(record)}'),
                 isThreeLine: true,
+                trailing: _canAcknowledge(record)
+                    ? TextButton(
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          await acknowledgeShiftHandover(record);
+                        },
+                        child: const Text('Παραλαβή'))
+                    : null,
               )),
           ]),
         )),
@@ -140,6 +149,62 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     } catch (e) {
       if (mounted) setState(() => error = 'Αδυναμία φόρτωσης παραδόσεων: $e');
     }
+  }
+
+  bool _canAcknowledge(Map<String, dynamic> record) {
+    final userId = OperonCloud.client.auth.currentUser?.id;
+    if (userId == null || record['created_by'] == userId) return false;
+    final receipts = (record['operon_handover_acknowledgements'] as List?) ?? const [];
+    return !receipts.any((entry) => entry['acknowledged_by'] == userId);
+  }
+
+  String _acknowledgementSummary(Map<String, dynamic> record) {
+    final receipts = (record['operon_handover_acknowledgements'] as List?) ?? const [];
+    if (receipts.isEmpty) return 'Δεν έχει επιβεβαιωθεί παραλαβή.';
+    return 'Επιβεβαιώσεις παραλαβής: ${receipts.length} · '
+        '${receipts.map((entry) => displayDate(entry['acknowledged_at'])).join(', ')}';
+  }
+
+  Future<void> acknowledgeShiftHandover(Map<String, dynamic> record) async {
+    if (loading || !_canAcknowledge(record)) return;
+    final note = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Επιβεβαίωση παραλαβής βάρδιας'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text('Επιβεβαιώνω ότι διάβασα την παράδοση. '
+              'Αυτό δεν ολοκληρώνει τις εκκρεμότητες.'),
+          TextField(
+            controller: note,
+            maxLength: 1000,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: 'Σχόλιο (προαιρετικό)'),
+          ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Ακύρωση')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Επιβεβαίωση')),
+        ],
+      ),
+    );
+    final comment = note.text.trim();
+    note.dispose();
+    if (!mounted || confirmed != true) return;
+    setState(() { loading = true; error = null; });
+    try {
+      await OperonCloud.client.rpc('operon_acknowledge_shift_handover', params: {
+        'p_handover_id': record['id'],
+        'p_note': comment,
+      });
+    } catch (e) {
+      if (mounted) setState(() => error = 'Αποτυχία παραλαβής: $e');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+    if (mounted) await showShiftHandovers();
   }
 
   String _linkedSummary(Map<String, dynamic> record) {
