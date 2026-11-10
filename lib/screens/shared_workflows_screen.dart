@@ -114,38 +114,136 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
             .order('created_at', ascending: false)
             .limit(30));
       if (!mounted) return;
+      String category = 'recent';
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
         showDragHandle: true,
-        builder: (ctx) => SafeArea(child: FractionallySizedBox(
-          heightFactor: 0.75,
-          child: ListView(padding: const EdgeInsets.all(16), children: [
-            Text('Παραδόσεις βάρδιας',
-                style: Theme.of(ctx).textTheme.titleLarge),
-            if (records.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('Δεν υπάρχουν ακόμη παραδόσεις βάρδιας.')),
-            for (final record in records)
-              Card(child: ListTile(
-                title: Text('${record['handover_role'] == 'operator' ? 'Χειριστών' : record['handover_role'] == 'foreman' ? 'Εργοδηγών' : 'Παλαιό αρχείο'} · ${record['shift_date']} · '
-                    '${shiftLabel(record['shift_name'] as String)} · '
-                    '${_handoverRoleLabel(record['handover_role'] as String?)}'),
-                subtitle: Text('${record['summary']}\n${_linkedSummary(record)}\n'
-                    '${_acknowledgementSummary(record)}'),
-                isThreeLine: true,
-                trailing: _canAcknowledge(record)
-                    ? TextButton(
-                        onPressed: () async {
-                          Navigator.pop(ctx);
-                          await acknowledgeShiftHandover(record);
-                        },
-                        child: const Text('Παραλαβή'))
-                    : null,
-              )),
-          ]),
-        )),
+        backgroundColor: const Color(0xFF0D1B2B),
+        builder: (ctx) => StatefulBuilder(
+          builder: (ctx, update) {
+            final visible = records.where((r) {
+              final role = r['handover_role'];
+              if (category == 'operator') return role == 'operator';
+              if (category == 'foreman') return role == 'foreman';
+              if (category == 'archive') return role == null;
+              return role != null;
+            }).toList();
+            return SafeArea(child: FractionallySizedBox(
+              heightFactor: 0.86,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Ημερολόγιο βάρδιας',
+                      style: TextStyle(color: Colors.white, fontSize: 25,
+                        fontWeight: FontWeight.w700)),
+                    SizedBox(height: 5),
+                    Text('Παραδόσεις · Εκκρεμότητες · Παραλαβές',
+                      style: TextStyle(color: Color(0xFFB0C5D5), fontSize: 13)),
+                  ]),
+                ),
+                SingleChildScrollView(scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(children: [
+                    for (final option in const [
+                      ('Πρόσφατες', 'recent'), ('Χειριστών', 'operator'),
+                      ('Εργοδηγών', 'foreman'), ('Αρχείο', 'archive')
+                    ])
+                      Padding(padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(option.$1),
+                          selected: category == option.$2,
+                          showCheckmark: false,
+                          selectedColor: const Color(0xFF25C7B7),
+                          backgroundColor: const Color(0xFF1A3043),
+                          labelStyle: TextStyle(color: category == option.$2
+                            ? const Color(0xFF08242D) : Colors.white),
+                          onSelected: (_) => update(() => category = option.$2),
+                        )),
+                  ])),
+                const SizedBox(height: 12),
+                Expanded(child: visible.isEmpty
+                  ? const Center(child: Text('Δεν υπάρχουν καταχωρίσεις.',
+                      style: TextStyle(color: Colors.white70)))
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                      itemCount: visible.length,
+                      itemBuilder: (_, i) {
+                        final record = visible[i];
+                        final role = record['handover_role'] as String?;
+                        final receipts = (record['operon_handover_acknowledgements'] as List?) ?? const [];
+                        final links = (record['operon_handover_workflows'] as List?) ?? const [];
+                        final legacy = role == null;
+                        final received = receipts.isNotEmpty;
+                        final status = legacy ? 'Ιστορική εγγραφή'
+                          : received ? 'Παραλήφθηκε' : 'Αναμονή παραλαβής';
+                        final statusColor = legacy ? Colors.blueGrey.shade200
+                          : received ? const Color(0xFF62DFA7) : const Color(0xFFFFCC80);
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF152B3D),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: const Color(0xFF2B4559))),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Row(children: [
+                              const Icon(Icons.assignment_outlined,
+                                color: Color(0xFF25C7B7)),
+                              const SizedBox(width: 10),
+                              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(legacy ? 'Παλαιό ημερολόγιο'
+                                    : 'Ημερολόγιο ${_handoverRoleLabel(role)}',
+                                    style: const TextStyle(color: Colors.white,
+                                      fontWeight: FontWeight.w700, fontSize: 16)),
+                                  Text('${record['shift_date']} · ${shiftLabel(record['shift_name'] as String)}',
+                                    style: const TextStyle(color: Color(0xFFB0C5D5),
+                                      fontSize: 12)),
+                                ])),
+                            ]),
+                            const SizedBox(height: 14),
+                            Text((record['summary'] ?? '').toString(),
+                              style: const TextStyle(color: Colors.white,
+                                fontSize: 15, height: 1.4)),
+                            const SizedBox(height: 12),
+                            Wrap(spacing: 12, runSpacing: 8, children: [
+                              Text(status, style: TextStyle(
+                                color: statusColor, fontWeight: FontWeight.w600)),
+                              Text('${links.length} εκκρεμότητες',
+                                style: const TextStyle(color: Color(0xFFB0C5D5))),
+                            ]),
+                            if (links.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              Text(_linkedSummary(record),
+                                style: const TextStyle(color: Color(0xFFD1E1EA),
+                                  fontSize: 13)),
+                            ],
+                            if (received) ...[
+                              const SizedBox(height: 10),
+                              Text(_acknowledgementSummary(record),
+                                style: const TextStyle(color: Color(0xFFB0C5D5),
+                                  fontSize: 12)),
+                            ],
+                            if (_canAcknowledge(record)) ...[
+                              const SizedBox(height: 14),
+                              SizedBox(width: double.infinity,
+                                child: FilledButton.icon(
+                                  onPressed: () async {
+                                    Navigator.pop(ctx);
+                                    await acknowledgeShiftHandover(record);
+                                  },
+                                  icon: const Icon(Icons.fact_check_outlined),
+                                  label: const Text('Επιβεβαίωση παραλαβής'))),
+                            ],
+                          ]),
+                        );
+                      })),
+              ]),
+            ));
+          },
+        ),
       );
     } catch (e) {
       if (mounted) setState(() => error = 'Αδυναμία φόρτωσης παραδόσεων: $e');
