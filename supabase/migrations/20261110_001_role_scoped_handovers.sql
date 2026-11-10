@@ -1,8 +1,8 @@
 -- Role-separated handovers. Existing records remain legacy read-only.
 begin;
 alter table public.operon_shift_handovers
- add column handover_role text check (handover_role in ('operator','foreman'));
-create index operon_shift_handovers_role_idx on public.operon_shift_handovers(unit_id,handover_role,created_at desc);
+ add column if not exists handover_role text check (handover_role in ('operator','foreman'));
+create index if not exists operon_shift_handovers_role_idx on public.operon_shift_handovers(unit_id,handover_role,created_at desc);
 
 drop policy operon_shift_handovers_read on public.operon_shift_handovers;
 create policy operon_shift_handovers_read on public.operon_shift_handovers
