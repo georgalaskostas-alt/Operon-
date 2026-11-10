@@ -168,8 +168,6 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
   bool _canAcknowledge(Map<String, dynamic> record) {
     final userId = OperonCloud.client.auth.currentUser?.id;
     if (userId == null || record['created_by'] == userId) return false;
-    final role = record['handover_role'];
-    if (role == null || !units.any((m) => m['unit_id'] == selectedUnit && m['role'] == role)) return false;
     final role = record['handover_role'] as String?;
     if (role == null || !_rolesForSelectedUnit().contains(role)) return false;
     final receipts = (record['operon_handover_acknowledgements'] as List?) ?? const [];
@@ -339,7 +337,6 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     try {
       await OperonCloud.client.rpc('operon_create_shift_handover', params: {
         'p_unit_id': unit,
-        'p_handover_role': handoverRole,
         'p_shift_date': date,
         'p_shift_name': result['shift'],
         'p_summary': result['summary'],
