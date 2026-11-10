@@ -36,7 +36,7 @@ for select to authenticated using (
 -- Replace existing 5-argument signature with a mandatory role-aware 6-argument RPC.
 drop function public.operon_create_shift_handover(uuid,date,text,text,uuid[]);
 drop function public.operon_create_shift_handover(uuid,date,text,text);
-create function public.operon_create_shift_handover(
+create or replace function public.operon_create_shift_handover(
   p_unit_id uuid,p_shift_date date,p_shift_name text,p_summary text,
   p_workflow_ids uuid[],p_handover_role text
 ) returns uuid language plpgsql security definer set search_path=''
