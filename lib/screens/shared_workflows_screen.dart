@@ -109,7 +109,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     try {
       final records = List<Map<String, dynamic>>.from(
         await OperonCloud.client.from('operon_shift_handovers')
-            .select('id,created_by,shift_date,shift_name,summary,created_at,operon_handover_workflows(workflow_id,operon_workflows(title,state)),operon_handover_acknowledgements(acknowledged_by,acknowledged_at,note)')
+            .select('id,created_by,handover_role,shift_date,shift_name,summary,created_at,operon_handover_workflows(workflow_id,operon_workflows(title,state)),operon_handover_acknowledgements(acknowledged_by,acknowledged_at,note)')
             .eq('unit_id', unit)
             .order('created_at', ascending: false)
             .limit(30));
@@ -130,7 +130,8 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
             for (final record in records)
               Card(child: ListTile(
                 title: Text('${record['shift_date']} · '
-                    '${shiftLabel(record['shift_name'] as String)}'),
+                    '${shiftLabel(record['shift_name'] as String)} · '
+                    '${_handoverRoleLabel(record['handover_role'] as String?)}'),
                 subtitle: Text('${record['summary']}\n${_linkedSummary(record)}\n'
                     '${_acknowledgementSummary(record)}'),
                 isThreeLine: true,
@@ -151,15 +152,33 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     }
   }
 
+  Set<String> _rolesForSelectedUnit() => units
+      .where((membership) => membership['unit_id'] == selectedUnit)
+      .map((membership) => membership['role'] as String)
+      .toSet();
+
+  String _handoverRoleLabel(String? role) {
+    switch (role) {
+      case 'operator': return 'Χειριστών';
+      case 'foreman': return 'Εργοδηγών';
+      default: return 'Παλαιό ημερολόγιο';
+    }
+  }
+
   bool _canAcknowledge(Map<String, dynamic> record) {
     final userId = OperonCloud.client.auth.currentUser?.id;
     if (userId == null || record['created_by'] == userId) return false;
+    final role = record['handover_role'] as String?;
+    if (role == null || !_rolesForSelectedUnit().contains(role)) return false;
     final receipts = (record['operon_handover_acknowledgements'] as List?) ?? const [];
     return !receipts.any((entry) => entry['acknowledged_by'] == userId);
   }
 
   String _acknowledgementSummary(Map<String, dynamic> record) {
     final receipts = (record['operon_handover_acknowledgements'] as List?) ?? const [];
+    if (receipts.isEmpty && record['handover_role'] == null) {
+      return 'Παλαιά εγγραφή · χωρίς ταξινόμηση ρόλου · μόνο ανάγνωση.';
+    }
     if (receipts.isEmpty) return 'Δεν έχει επιβεβαιωθεί παραλαβή.';
     return 'Επιβεβαιώσεις παραλαβής: ${receipts.length} · '
         '${receipts.map((entry) => displayDate(entry['acknowledged_at'])).join(', ')}';
@@ -231,7 +250,14 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
   Future<void> createShiftHandover() async {
     final unit = selectedUnit;
     if (unit == null || loading) return;
+    final availableRoles = _rolesForSelectedUnit()
+        .where((role) => role == 'operator' || role == 'foreman').toList();
+    if (availableRoles.isEmpty) {
+      setState(() => error = 'Μόνο χειριστής ή εργοδηγός μπορεί να παραδώσει βάρδια.');
+      return;
+    }
     final note = TextEditingController();
+    var handoverRole = availableRoles.first;
     var shift = 'morning';
     final openTasks = tasks.where((t) => t['state'] != 'completed').toList();
     final selectedWorkflowIds = <String>{};
@@ -246,6 +272,15 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
           title: const Text('Νέα παράδοση βάρδιας'),
           content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
             Text('Ημερομηνία: $date'),
+            DropdownButton<String>(
+              value: handoverRole,
+              isExpanded: true,
+              items: availableRoles.map((role) => DropdownMenuItem(
+                value: role, child: Text('Ημερολόγιο ${_handoverRoleLabel(role)}'))).toList(),
+              onChanged: (value) {
+                if (value != null) update(() => handoverRole = value);
+              },
+            ),
             DropdownButton<String>(
               value: shift,
               isExpanded: true,
@@ -286,7 +321,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
             FilledButton(
               onPressed: () {
                 if (note.text.trim().isNotEmpty) {
-                  Navigator.pop(ctx, {'shift': shift, 'summary': note.text.trim(),
+                  Navigator.pop(ctx, {'shift': shift, 'handover_role': handoverRole, 'summary': note.text.trim(),
                     'workflow_ids': selectedWorkflowIds.join(',')});
                 }
               },
@@ -305,6 +340,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
         'p_shift_date': date,
         'p_shift_name': result['shift'],
         'p_summary': result['summary'],
+        'p_handover_role': result['handover_role'],
         'p_workflow_ids': (result['workflow_ids'] ?? '').isEmpty
             ? <String>[] : result['workflow_ids']!.split(','),
       });
