@@ -233,3 +233,8 @@ Never claim cost savings, avoided incidents or competence improvements before ev
 Update the **status, evidence, pending work and tests** for each affected ID in every relevant feature PR. Do not mark `IMPLEMENTED` solely because a UI mockup exists. Any change in scope (e.g., AI, SAP integration, WALP certification) must retain explicit safety, privacy and authorization boundaries.
 
 **Related repository docs:** `docs/PRODUCT_SPEC.md`, `docs/ROADMAP.md`, `docs/ENTERPRISE_ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/DATA_ARCHITECTURE.md`, `docs/MULTIUSER_FOUNDATION.md`.
+
+
+## Strategic charter and reporting governance (2026-11-12)
+
+The user-approved five-pillar commercial vision, prioritized acceptance gates, baseline status, living backlog and detailed progress-reporting protocol are maintained in [OPERON_STRATEGIC_VISION.md](OPERON_STRATEGIC_VISION.md). Use that charter alongside this implementation registry. At each requested progress review, verify the repository and available test evidence, update both documents as appropriate, and commit changes. Updates are performed during active work, not autonomously in the background.
