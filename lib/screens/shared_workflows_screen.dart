@@ -59,7 +59,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = 'Cloud request failed: $e');
+      if (mounted) setState(() => error = 'Αδυναμία φόρτωσης εργασιών: $e');
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -214,7 +214,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
                             Wrap(spacing: 12, runSpacing: 8, children: [
                               Text(status, style: TextStyle(
                                 color: statusColor, fontWeight: FontWeight.w600)),
-                              Text('${links.length} εκκρεμότητες',
+                              Text('${links.length} συνδεδεμένες εργασίες',
                                 style: const TextStyle(color: Color(0xFFB0C5D5))),
                             ]),
                             if (links.isNotEmpty) ...[
@@ -465,18 +465,18 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     final title = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('New shared workflow'),
+        title: const Text('Νέα κοινή εργασία'),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLength: 250,
-          decoration: const InputDecoration(labelText: 'Title'),
+          decoration: const InputDecoration(labelText: 'Περιγραφή εργασίας'),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Ακύρωση')),
           FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
-            child: const Text('Create')),
+            child: const Text('Καταχώριση')),
         ],
       ),
     );
@@ -488,7 +488,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
         'p_title': title,
       });
     } catch (e) {
-      if (mounted) setState(() => error = 'Unable to submit workflow: $e');
+      if (mounted) setState(() => error = 'Αδυναμία καταχώρισης εργασίας: $e');
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -555,7 +555,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel')),
+            child: const Text('Ακύρωση')),
           FilledButton(
             onPressed: () {
               final value = controller.text.trim();
@@ -576,7 +576,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
         'p_note': note,
       });
     } catch (e) {
-      if (mounted) setState(() => error = 'Transition failed: $e');
+      if (mounted) setState(() => error = 'Αδυναμία αλλαγής κατάστασης: $e');
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -649,7 +649,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
         )),
       );
     } catch (e) {
-      if (mounted) setState(() => error = 'Unable to load history: $e');
+      if (mounted) setState(() => error = 'Αδυναμία φόρτωσης ιστορικού: $e');
     }
   }
 
@@ -663,14 +663,14 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
     final myCount = tasks.where((task) =>
         allowedNextStates(task, roles).isNotEmpty).length;
     return Scaffold(
-      appBar: AppBar(title: const Text('Shared Workflows'),
+      appBar: AppBar(title: const Text('Εργασίες μονάδας'),
         actions: [IconButton(onPressed: loading ? null : load, icon: const Icon(Icons.refresh))]),
       body: !OperonCloud.configured
-        ? const Center(child: Text('Cloud is not configured; offline tasks are unchanged.'))
+        ? const Center(child: Text('Η σύνδεση με το cloud δεν έχει ρυθμιστεί. Οι τοπικές εργασίες παραμένουν διαθέσιμες.'))
         : !OperonCloud.available
-          ? const Center(child: Text('Sign in from OPERON Account first.'))
+          ? const Center(child: Text('Συνδεθείτε πρώτα από τον λογαριασμό OPERON.'))
           : ListView(padding: const EdgeInsets.all(16), children: [
-              const Text('Development data only. Local tasks are not uploaded.'),
+              const Text('Περιβάλλον δοκιμών · Οι τοπικές εργασίες παραμένουν στη συσκευή.', style: TextStyle(fontSize: 12, color: Colors.white70)),
               if (loading) const LinearProgressIndicator(),
               if (error != null) Text(error!),
               Card(
@@ -685,7 +685,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
                   onTap: openMyQueue,
                 ),
               ),
-              if (units.isEmpty && !loading) const Text('No unit membership assigned by administrator.'),
+              if (units.isEmpty && !loading) const Text('Δεν έχει οριστεί μονάδα για τον λογαριασμό σας. Επικοινωνήστε με τον διαχειριστή.'),
               if (selectedUnit != null) ...[
                 DropdownButton<String>(
                   isExpanded: true, value: selectedUnit,
@@ -693,7 +693,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
                     .map((id) => DropdownMenuItem(value: id, child: Text(unitNames[id] ?? id))).toList(),
                   onChanged: loading ? null : (value) { setState(() { selectedUnit = value; previousActionableCount = null; queueNotice = null; }); load(); },
                 ),
-                Text('Ρόλοι / Roles: ${roles.join(', ')}'),
+                Text('Ρόλος στη μονάδα: ${roles.map(roleLabel).join(', ')}'),
                 const SizedBox(height: 12),
                 Wrap(spacing: 8, children: [
                   OutlinedButton.icon(
@@ -729,7 +729,7 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
                   FilledButton.icon(
                     onPressed: loading ? null : submitWorkflow,
                     icon: const Icon(Icons.add),
-                    label: const Text('Create shared workflow'),
+                    label: const Text('Νέα κοινή εργασία'),
                   ),
                 for (final task in tasks.where((task) =>
                   (filter == 'mine' && allowedNextStates(task, roles).isNotEmpty) ||
