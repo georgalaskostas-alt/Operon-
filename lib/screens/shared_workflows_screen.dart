@@ -114,6 +114,8 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
             .order('created_at', ascending: false)
             .limit(30));
       if (!mounted) return;
+      final canViewForeman = _rolesForSelectedUnit().any((role) =>
+          const {'foreman', 'coordinator', 'supervisor', 'unitEngineer'}.contains(role));
       String category = 'recent';
       await showModalBottomSheet<void>(
         context: context,
@@ -146,9 +148,10 @@ class _SharedWorkflowsScreenState extends State<SharedWorkflowsScreen> {
                 SingleChildScrollView(scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(children: [
-                    for (final option in const [
+                    for (final option in [
                       ('Πρόσφατες', 'recent'), ('Χειριστών', 'operator'),
-                      ('Εργοδηγών', 'foreman'), ('Αρχείο', 'archive')
+                      if (canViewForeman) ('Εργοδηγών', 'foreman'),
+                      if (canViewForeman) ('Αρχείο', 'archive'),
                     ])
                       Padding(padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
